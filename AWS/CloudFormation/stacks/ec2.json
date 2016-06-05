@@ -1,0 +1,83 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Stack for EC2",
+  "Parameters": {
+    "KeyPairName": {
+      "Description": "The key pair name to connect to the instances",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "CloudFormationKeyPair"
+    },
+    "InstanceType": {
+      "Description": "WebServer EC2 instance type",
+      "Type": "String",
+      "Default": "t2.small",
+      "AllowedValues": ["t2.micro", "t2.small"],
+      "ConstraintDescription": "must be a t2.micro or t2.small instance type"
+    },
+    "VPC": {
+      "Description": "The VPC being used to create inside",
+      "Type": "AWS::EC2::VPC"
+    },
+    "PrivateSubnetOne": {
+      "Description": "Private Subnet #1",
+      "Type": "AWS::EC2::Subnet"
+    },
+    "PrivateSubnetTwo": {
+      "Description": "Private Subnet #2",
+      "Type": "AWS::EC2::Subnet"
+    },
+    "PublicSubnetOne": {
+      "Description": "Public Subnet #1",
+      "Type": "AWS::EC2::Subnet"
+    },
+    "PublicSubnetTwo": {
+      "Description": "Public Subnet #2",
+      "Type": "AWS::EC2::Subnet"
+    }
+  },
+  "Mappings": {
+    "AmazonMachineImages": {
+      "eu-west-1": {
+        "AmazonLinux": "ami-b0ac25c3",
+        "Description": "Amazon Linux AMI 2016.03.1 (HVM), SSD Volume Type, eu-west-1"
+      },
+      "us-east-1": {
+        "AmazonLinux": "ami-f5f41398",
+        "Description": "Amazon Linux AMI 2016.03.1 (HVM), SSD Volume Type, us-east-1"
+      },
+      "us-west-1": {
+        "AmazonLinux": "ami-6e84fa0e",
+        "Description": "Amazon Linux AMI 2016.03.1 (HVM), SSD Volume Type, us-west-1"
+      },
+      "us-west-2": {
+        "AmazonLinux": "ami-d0f506b0",
+        "Description": "Amazon Linux AMI 2016.03.1 (HVM), SSD Volume Type, us-west-2"
+      }
+    }
+  },
+  "Resources": {
+    "WhiteListedSitesHttpsSg": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for public HTTP and HTTPS access",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "CidrIp": "0.0.0.0/32"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "443",
+            "ToPort": "443",
+            "CidrIp": "0.0.0.0/32"
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    }
+  }
+}
