@@ -1,0 +1,100 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Drupal 7 High-Availibility Stack",
+  "Parameters": {
+    "KeyPairName": {
+      "Description": "The key pair name to connect to the instances",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "CloudFormationKeyPair"
+    },
+    "VpcCidrBlock": {
+      "Description": "The CIDR range of the VPC",
+      "Type": "String",
+      "Default": "10.42.0.0/16"
+    },
+    "PublicSubnets": {
+      "Description": "The CIDR ranges of the public subnets",
+      "Type": "CommaDelimitedList",
+      "Default": "10.42.10.0/24, 10.42.11.0/24"
+    },
+    "PrivateSubnets": {
+      "Description": "The CIDR ranges of the private subnets",
+      "Type": "CommaDelimitedList",
+      "Default": "10.42.20.0/24, 10.42.21.0/24"
+    }
+  },
+  "Mappings": {
+    "AmazonMachineImages": {
+      "eu-west-1": {
+        "AmazonLinux": "ami-b0ac25c3",
+        "Description": "Amazon Linux AMI 2016.03.1 (HVM), SSD Volume Type"
+      }
+    }
+  },
+  "Resources": {
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "true",
+        "CidrBlock": { "Ref": "VpcCidrBlock" },
+        "Tags": [{
+          "Key": "Name",
+          "Value": "Drupal 7 stack VPC"
+        }]
+      }
+    },
+    "InternetGateway": {
+      "Type": "AWS::EC2::InternetGateway"
+    },
+    "VPCGatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "InternetGatewayId": { "Ref": "InternetGateway" }
+      }
+    },
+    "NATGatewayOne": {
+      "DependsOn": "InternetGateway",
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "ElasticIPOne",
+            "AllocationId"
+          ]
+        },
+        "SubnetId": {
+          "Fn::Select" : [ "0", {"Ref" : "PublicSubnets"} ]
+        }
+      }
+    },
+    "ElasticIPOne": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc"
+      }
+    },
+    "NATGatewayTwo": {
+      "DependsOn": "InternetGateway",
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "ElasticIPTwo",
+            "AllocationId"
+          ]
+        },
+        "SubnetId": {
+          "Fn::Select" : [ "1", {"Ref" : "PublicSubnets"} ]
+        }
+      }
+    },
+    "ElasticIPTwo": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc"
+      }
+    }
+  }
+}
