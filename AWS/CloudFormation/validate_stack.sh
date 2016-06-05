@@ -18,7 +18,7 @@ templates=( $(find . -type f -name "*.json") )
 
 for template in "${templates[@]}"
 do
-  aws cloudformation validate-template --template-body file://$template --region eu-west-1
+  aws cloudformation validate-template --template-body file://$template --region eu-west-1 > /dev/null
 
   if [ $? -eq 0 ]
   then
