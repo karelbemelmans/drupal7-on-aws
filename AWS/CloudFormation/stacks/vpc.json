@@ -58,7 +58,8 @@
         "MapPublicIpOnLaunch": true,
         "CidrBlock": { "Fn::Select" : [ "0", {"Ref" : "PublicSubnetsCidr"} ] },
         "AvailabilityZone": {
-          "Fn::Select": [ "0", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ] },
+          "Fn::Select": [ "0", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ]
+        },
         "Tags": [{
           "Key": "Name",
           "Value": "Public Subnet #1"
@@ -72,7 +73,8 @@
         "MapPublicIpOnLaunch": true,
         "CidrBlock": { "Fn::Select" : [ "1", {"Ref" : "PublicSubnetsCidr"} ] },
         "AvailabilityZone": {
-          "Fn::Select": [ "1", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ] },
+          "Fn::Select": [ "1", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ]
+        },
         "Tags": [{
           "Key": "Name",
           "Value": "Public Subnet #2"
@@ -86,7 +88,8 @@
         "MapPublicIpOnLaunch": true,
         "CidrBlock": { "Fn::Select" : [ "0", {"Ref" : "PrivateSubnetsCidr"} ] },
         "AvailabilityZone": {
-          "Fn::Select": [ "0", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ] },
+          "Fn::Select": [ "0", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ]
+        },
         "Tags": [{
           "Key": "Name",
           "Value": "Private Subnet #1"
@@ -100,7 +103,8 @@
         "MapPublicIpOnLaunch": true,
         "CidrBlock": { "Fn::Select" : [ "1", {"Ref" : "PrivateSubnetsCidr"} ] },
         "AvailabilityZone": {
-          "Fn::Select": [ "1", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ] },
+          "Fn::Select": [ "1", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ]
+        },
         "Tags": [{
           "Key": "Name",
           "Value": "Private Subnet #2"
