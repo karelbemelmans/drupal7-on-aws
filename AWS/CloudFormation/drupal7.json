@@ -1,0 +1,46 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Stack for Drupal 7",
+  "Parameters": {
+    "AmazonS3TemplateURL": {
+      "Description": "The S3 bucket containing the CloudFormation templates",
+      "Type": "String",
+      "Default": ""
+    },
+    "Version": {
+      "Description": "The version of CloudFormation templates",
+      "Type": "String",
+      "Default": "latest"
+    },
+    "KeyPairName": {
+      "Description": "The key pair name to connect to the instances",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "CloudFormationKeyPair"
+    },
+    "InstanceType": {
+      "Description": "WebServer EC2 instance type",
+      "Type": "String",
+      "Default": "t2.small",
+      "AllowedValues": ["t2.micro", "t2.small"],
+      "ConstraintDescription": "must be a t2.micro or t2.small instance type"
+    }
+  },
+  "Resources": {
+    "StackVPC": {
+      "Type": "AWS::CloudFormation::Stack",
+      "Properties": {
+        "TemplateURL": { "Fn::Join": [ "", [
+          { "Ref": "AmazonS3TemplateURL" }, { "Ref": "Version" }, "/stacks/vpc.json"
+        ] ] }
+      }
+    },
+    "StackEC2": {
+      "Type": "AWS::CloudFormation::Stack",
+      "Properties": {
+        "TemplateURL": { "Fn::Join": [ "", [
+          { "Ref": "AmazonS3TemplateURL" }, { "Ref": "Version" }, "/stacks/ec2.json"
+        ] ] }
+      }
+    }
+  }
+}
