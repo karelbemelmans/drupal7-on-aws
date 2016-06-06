@@ -72,9 +72,19 @@ EOF
 # from the docker hub, you would take your own Drupal Dockerfile that also
 # contains all your contrib and custom modules and themes. This has to be the
 # complete website, we are only going to overwrite the settings file here.
+#
+# TODO: Make a Docker container with Amazon S3 support included.
 cat << EOF > Dockerfile
 FROM drupal:7-apache
+
+# Overwrite the settings.php file
 COPY settings.php /var/www/html/sites/default/settings.php
+
+# Add the Amazon S3 module. Normally this would be already included in our
+# Drupal container, but since we use the Drupal image from Docker hub, we add
+# it manual here.
+FIXME
+
 EOF
 
 # Create our Docker compose file to start out container:
