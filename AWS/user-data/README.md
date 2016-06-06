@@ -1,4 +1,4 @@
-# AWS User Data scripts
+## AWS User Data scripts
 
 This directory contains user-data scripts used by AWS Launch Configurations or EC2 instances.
 
