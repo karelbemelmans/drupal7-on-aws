@@ -63,11 +63,10 @@ cd /home/ec2-user
 # We append this file to the normal settings.php file, so we can overwrite any
 # setting we would like.
 cat << EOF > settings.php
-# This is a test.
+// This is a test.
 EOF
 
-
-# Create our customer Drupal container with a modified settings file.
+# Create our custom Drupal container with a modified settings file.
 #
 # Note: If this was a real project, you would not start with the Drupal 7 file
 # from the docker hub, you would take your own Drupal Dockerfile that also
@@ -78,16 +77,14 @@ FROM drupal:7-apache
 COPY settings.php /var/www/html/sites/default/settings.php
 EOF
 
-# Create out Docker compose file to start out container:
+# Create our Docker compose file to start out container:
 DOCKER_COMPOSER_FILE=docker-compose.yml
 
 cat << EOF > $DOCKER_COMPOSER_FILE
 drupal:
   build: .
   ports:
-    - "5000:5000"
-  environment:
-    - REGISTRY_HTTP_SECRET=oonohch4pughoh9ienguxaem7sheij3x
+    - "80:80"
 EOF
 
 # Add papertrail logging if the tag has been set on the instance.
