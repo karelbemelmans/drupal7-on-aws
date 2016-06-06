@@ -7,15 +7,25 @@
       "Type": "String",
       "Default": "10.42.0.0/16"
     },
-    "PublicSubnetsCidr": {
+    "PublicSubnetOneCidr": {
       "Description": "The CIDR ranges of the public subnets",
       "Type": "CommaDelimitedList",
-      "Default": "10.42.10.0/24, 10.42.11.0/24"
+      "Default": "10.42.0.0/18"
     },
-    "PrivateSubnetsCidr": {
+    "PublicSubnetTwoCidr": {
+      "Description": "The CIDR ranges of the public subnets",
+      "Type": "CommaDelimitedList",
+      "Default": "10.42.64.0/18"
+    },
+    "PrivateSubnetOneCidr": {
       "Description": "The CIDR ranges of the private subnets",
       "Type": "CommaDelimitedList",
-      "Default": "10.42.20.0/24, 10.42.21.0/24"
+      "Default": "10.42.128.0/18"
+    },
+    "PrivateSubnetTwoCidr": {
+      "Description": "The CIDR ranges of the private subnets",
+      "Type": "CommaDelimitedList",
+      "Default": "10.42.192.0/18"
     }
   },
   "Outputs": {
@@ -56,7 +66,7 @@
       "Properties": {
         "VpcId": { "Ref": "VPC" },
         "MapPublicIpOnLaunch": true,
-        "CidrBlock": { "Fn::Select" : [ "0", {"Ref" : "PublicSubnetsCidr"} ] },
+        "CidrBlock": { "Ref": "PublicSubnetOneCidr" },
         "AvailabilityZone": {
           "Fn::Select": [ "0", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ]
         },
@@ -71,7 +81,7 @@
       "Properties": {
         "VpcId": { "Ref": "VPC" },
         "MapPublicIpOnLaunch": true,
-        "CidrBlock": { "Fn::Select" : [ "1", {"Ref" : "PublicSubnetsCidr"} ] },
+        "CidrBlock": { "Ref": "PublicSubnetTwoCidr" },
         "AvailabilityZone": {
           "Fn::Select": [ "1", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ]
         },
@@ -86,7 +96,7 @@
       "Properties": {
         "VpcId": { "Ref": "VPC" },
         "MapPublicIpOnLaunch": true,
-        "CidrBlock": { "Fn::Select" : [ "0", {"Ref" : "PrivateSubnetsCidr"} ] },
+        "CidrBlock": { "Ref": "PrivateSubnetOneCidr" },
         "AvailabilityZone": {
           "Fn::Select": [ "0", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ]
         },
@@ -101,7 +111,7 @@
       "Properties": {
         "VpcId": { "Ref": "VPC" },
         "MapPublicIpOnLaunch": true,
-        "CidrBlock": { "Fn::Select" : [ "1", {"Ref" : "PrivateSubnetsCidr"} ] },
+        "CidrBlock": { "Ref": "PrivateSubnetTwoCidr" },
         "AvailabilityZone": {
           "Fn::Select": [ "1", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ]
         },
@@ -192,7 +202,7 @@
       "Type": "AWS::EC2::NatGateway",
       "Properties": {
         "AllocationId": { "Fn::GetAtt": [ "ElasticIPOne", "AllocationId" ] },
-        "SubnetId": { "Fn::Select" : [ "0", {"Ref" : "PublicSubnetsCidr"} ] }
+        "SubnetId": { "Ref" : "PublicSubnetOne" }
       }
     },
     "ElasticIPOne": {
@@ -204,7 +214,7 @@
       "Type": "AWS::EC2::NatGateway",
       "Properties": {
         "AllocationId": { "Fn::GetAtt": [ "ElasticIPTwo", "AllocationId"] },
-        "SubnetId": { "Fn::Select" : [ "1", {"Ref" : "PublicSubnetsCidr"} ] }
+        "SubnetId": { "Ref" : "PublicSubnetTwo" }
       }
     },
     "ElasticIPTwo": {
