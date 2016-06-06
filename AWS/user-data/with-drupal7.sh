@@ -90,14 +90,16 @@ drupal:
     - REGISTRY_HTTP_SECRET=oonohch4pughoh9ienguxaem7sheij3x
 EOF
 
-# Add papertrail logging if the tag has been set on the instance
+# Add papertrail logging if the tag has been set on the instance.
+# Our Launch Configuration will create the correct Logger tag so Docker will do
+# remote syslogging to the address specified in that tag (papertrail in my case)
 if [ "$LOGGER_TAG" != "None" ]; then
 
 cat << EOF >> $DOCKER_COMPOSER_FILE
   log_driver: syslog
   log_opt:
     syslog-address: "${LOGGER_TAG}"
-    tag: "registry-v2"
+    tag: "drupal7"
 EOF
 
 fi
