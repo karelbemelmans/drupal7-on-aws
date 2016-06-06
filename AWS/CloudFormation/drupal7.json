@@ -5,7 +5,12 @@
     "AmazonS3TemplateURL": {
       "Description": "The S3 bucket containing the CloudFormation templates",
       "Type": "String",
-      "Default": "https://s3-eu-west-1.amazonaws.com/karelbemelmans-running-drupal7-on-aws/CloudFormation"
+      "Default": "https://s3-eu-west-1.amazonaws.com/karelbemelmans-running-drupal7-on-aws/"
+    },
+    "Version": {
+      "Description": "The version of CloudFormation templates",
+      "Type": "String",
+      "Default": "2016-06-06"
     },
     "KeyPairName": {
       "Description": "The key pair name to connect to the instances",
@@ -25,7 +30,7 @@
       "Type": "AWS::CloudFormation::Stack",
       "Properties": {
         "TemplateURL": { "Fn::Join": [ "", [
-          { "Ref": "AmazonS3TemplateURL" }, "/stacks/vpc.json"
+          { "Ref": "AmazonS3TemplateURL" }, { "Ref": "Version" }, "/CloudFormation/stacks/vpc.json"
         ] ] }
       }
     },
@@ -33,7 +38,7 @@
       "Type": "AWS::CloudFormation::Stack",
       "Properties": {
         "TemplateURL": { "Fn::Join": [ "", [
-          { "Ref": "AmazonS3TemplateURL" }, "/stacks/ec2.json"
+          { "Ref": "AmazonS3TemplateURL" }, { "Ref": "Version" }, "/CloudFormation/stacks/ec2.json"
         ] ] }
       }
     }
