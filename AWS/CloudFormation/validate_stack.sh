@@ -14,11 +14,13 @@
 # aws_secret_access_key = YYY
 
 FAILED=0
+REGION=eu-west-1
+
 templates=( $(find . -type f -name "*.json") )
 
 for template in "${templates[@]}"
 do
-  aws cloudformation validate-template --template-body file://$template --region eu-west-1 > /dev/null
+  aws cloudformation validate-template --template-body file://$template --region $REGION > /dev/null
 
   if [ $? -eq 0 ]
   then
