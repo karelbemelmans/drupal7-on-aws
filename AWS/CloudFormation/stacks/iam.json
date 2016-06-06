@@ -1,11 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "IAM Policies, Roles and Instance profiles",
-  "Outputs": {
-    "IAMInstanceProfileForAMCServices": {
-      "Value": { "Ref": "IAMInstanceProfileForAMCServices" }
-    }
-  },
   "Resources": {
     "SelfConfiguringResourcePolicy": {
       "Type": "AWS::IAM::Policy",
