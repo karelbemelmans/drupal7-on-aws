@@ -34,6 +34,14 @@
         ] ] }
       }
     },
+    "StackIAM": {
+      "Type": "AWS::CloudFormation::Stack",
+      "Properties": {
+        "TemplateURL": { "Fn::Join": [ "", [
+          { "Ref": "AmazonS3TemplateURL" }, { "Ref": "Version" }, "/CloudFormation/stacks/iam.json"
+        ] ] }
+      }
+    },
     "StackEC2": {
       "Type": "AWS::CloudFormation::Stack",
       "Properties": {
