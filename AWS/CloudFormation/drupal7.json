@@ -49,6 +49,14 @@
           { "Ref": "AmazonS3TemplateURL" }, { "Ref": "Version" }, "/CloudFormation/stacks/ec2.json"
         ] ] }
       }
+    },
+    "StackRDS": {
+      "Type": "AWS::CloudFormation::Stack",
+      "Properties": {
+        "TemplateURL": { "Fn::Join": [ "", [
+          { "Ref": "AmazonS3TemplateURL" }, { "Ref": "Version" }, "/CloudFormation/stacks/rds.json"
+        ] ] }
+      }
     }
   }
 }
