@@ -4,4 +4,5 @@ While this code is on github, it needs to be in an AWS S3 bucket for the sub sta
 to be able to referenced. I have a build server that pushes this automatically to this S3
 url, but you should probably fork this code and push it to your own bucket.
 
-S3:
+S3 top stack location: https://s3-eu-west-1.amazonaws.com/karelbemelmans-running-drupal7-on-aws/2016-06-06/CloudFormation/drupal7.json
+
