@@ -6,8 +6,16 @@
 BUCKET=karelbemelmans-running-drupal7-on-aws/2016-06-06
 REGION=eu-west-1
 
-# Clean everything first
-aws s3 rm s3://$BUCKET --region $REGION --recursive
+echo "# CloudFormation"
+./CloudFormation/validate_stack.sh
+if [ $? -eq 0 ]
+then
+  aws s3 rm s3://$BUCKET/CloudFormation --region $REGION --recursive
+  aws s3 cp CloudFormation s3://$BUCKET/CloudFormation --region $REGION --recursive --exclude "*.md" --exclude "*.sh"
+else
+  echo "CloudFormation files did not validate, not copying to S3!"
+fi
 
-# Copy the new files
-aws s3 cp . s3://$BUCKET --region $REGION --recursive --exclude "*.md" --exclude "*.sh"
+echo "# User Data"
+aws s3 rm s3://$BUCKET/user-data --region $REGION --recursive
+aws s3 cp user-data s3://$BUCKET/user-data --region $REGION --recursive 
