@@ -593,6 +593,7 @@
               "/tmp/settings.php": {
                 "content":  { "Fn::Join" : [ "", [
                   "<?php\n\n",
+                  "// This is a very minimal settings.php file.\n",
                   "$databases['default']['default'] = array(\n",
                   "  'driver' => 'mysql',\n",
                   "  'database' => 'drupal7',\n",
@@ -612,10 +613,30 @@
 
               "/tmp/Dockerfile": {
                 "content":  { "Fn::Join" : [ "", [
+
                   "FROM drupal:7-apache\n",
                   "COPY settings.php /var/www/html/sites/default/settings.php\n",
-                  "# TODO: Add memcached contrib module\n",
-                  "# TODO: Add S3 contrib module\n"
+
+                  "# Add memcached contrib module\n",
+                  "RUN mkdir -p /var/www/html/sites/all/modules/contrib/memcache \
+                    && curl -Lks https://ftp.drupal.org/files/projects/memcache-7.x-1.5.tar.gz \
+                    | tar --strip=1 -xzC /var/www/html/sites/all/modules/contrib/memcache\n",
+
+                  "# Add Libraries contrib module\n"
+                  "RUN mkdir -p /var/www/html/sites/all/modules/contrib/libraries \
+                    && curl -Lks https://ftp.drupal.org/files/projects/libraries-7.x-2.3.tar.gz \
+                    | tar --strip=1 -xzC /var/www/html/sites/all/modules/contrib/libraries\n",
+
+                  "# Add awssdk2 library, needed for s3fs\n"
+                  "RUN mkdir -p /var/www/html/sites/all/libraries/awssdk2 \
+                    && curl -Lks https://github.com/aws/aws-sdk-php/releases/download/2.6.3/aws.zip \
+                    | tar --strip=1 -xzC /var/www/html/sites/all/libraries/awssdk2\n",
+
+                  "# Add S3fs contrib module\n"
+                  "RUN mkdir -p /var/www/html/sites/all/modules/contrib/s3fs \
+                    && curl -Lks https://ftp.drupal.org/files/projects/s3fs-7.x-2.5.tar.gz \
+                    | tar --strip=1 -xzC /var/www/html/sites/all/modules/contrib/s3fs\n",
+
                 ]]},
                 "mode" : "000644",
                 "owner" : "root",
