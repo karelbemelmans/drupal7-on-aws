@@ -671,9 +671,7 @@
                   "drupal:\n",
                   "  build: .\n",
                   "  ports:\n",
-                  "    - \"80:80\"\n",
-                  "  volumes:\n",
-                  "    - ./config:/tmp/config\n"
+                  "    - \"80:80\"\n"
                 ]]},
                 "mode" : "000644",
                 "owner" : "root",
