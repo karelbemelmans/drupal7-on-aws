@@ -640,7 +640,6 @@
 
                   "COPY settings.php /var/www/html/sites/default/settings.php\n",
 
-
                   "# Add memcached contrib module\n",
                   "RUN mkdir -p /var/www/html/sites/all/modules/contrib/memcache \\n",
                   "  && curl -Lks https://ftp.drupal.org/files/projects/memcache-7.x-1.5.tar.gz \\n",
