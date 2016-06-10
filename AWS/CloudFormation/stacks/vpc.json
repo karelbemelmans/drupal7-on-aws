@@ -95,7 +95,7 @@
       "Type": "AWS::EC2::Subnet",
       "Properties": {
         "VpcId": { "Ref": "VPC" },
-        "MapPublicIpOnLaunch": true,
+        "MapPublicIpOnLaunch": false,
         "CidrBlock": { "Ref": "PrivateSubnetOneCidr" },
         "AvailabilityZone": {
           "Fn::Select": [ "0", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ]
@@ -110,7 +110,7 @@
       "Type": "AWS::EC2::Subnet",
       "Properties": {
         "VpcId": { "Ref": "VPC" },
-        "MapPublicIpOnLaunch": true,
+        "MapPublicIpOnLaunch": false,
         "CidrBlock": { "Ref": "PrivateSubnetTwoCidr" },
         "AvailabilityZone": {
           "Fn::Select": [ "1", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ]
