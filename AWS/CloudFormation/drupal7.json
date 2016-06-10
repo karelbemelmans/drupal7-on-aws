@@ -6,8 +6,7 @@
 
     "KeyPairName": {
       "Description": "The key pair name to connect to the instances",
-      "Type": "AWS::EC2::KeyPair::KeyName",
-      "Default": "CloudFormationKeyPair"
+      "Type": "AWS::EC2::KeyPair::KeyName"
     },
 
     "InstanceType": {
@@ -349,19 +348,18 @@
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "Elasticache Security Group",
-        "VpcId": { "Ref" : "VPC" },
         "SecurityGroupIngress": [
           {
             "IpProtocol": "tcp",
             "FromPort": "11211",
             "ToPort": "11211",
-            "SourceSecurityGroupName": {"Ref": "PrivateSubnetOneCidr"}
+            "CidrIp": {"Ref": "PrivateSubnetOneCidr"}
           },
           {
             "IpProtocol": "tcp",
             "FromPort": "11211",
             "ToPort": "11211",
-            "SourceSecurityGroupName": {"Ref": "PrivateSubnetTwoCidr"}
+            "CidrIp": {"Ref": "PrivateSubnetTwoCidr"}
           }
         ]
       }
@@ -428,6 +426,7 @@
         "AllocatedStorage" : { "Ref" : "DBAllocatedStorage" },
         "VPCSecurityGroups" : [ { "Ref" : "Drupal7DbSecurityGroup"} ],
         "DBInstanceClass" : { "Ref": "DBClass" },
+        "Engine": "MySQL",
         "StorageType": "gp2",
         "MultiAZ": true,
         "DBSubnetGroupName" : { "Ref" : "Drupal7DBSubnetGroup" },
@@ -453,7 +452,7 @@
             "IpProtocol": "tcp",
             "FromPort": "80",
             "ToPort": "80",
-            "CidrIp": "0.0.0.0/32"
+            "CidrIp": "0.0.0.0/0"
           }
         ],
         "VpcId": {
@@ -468,13 +467,13 @@
         "GroupDescription": "Security group for the Drupal web server inside the private subnet",
         "SecurityGroupIngress": [
           {
-            "IpProtocol": "http",
+            "IpProtocol": "tcp",
             "FromPort": "80",
             "ToPort": "80",
             "CidrIp": { "Ref": "PrivateSubnetOneCidr"}
           },
           {
-            "IpProtocol": "http",
+            "IpProtocol": "tcp",
             "FromPort": "80",
             "ToPort": "80",
             "CidrIp": { "Ref": "PrivateSubnetTwoCidr"}
