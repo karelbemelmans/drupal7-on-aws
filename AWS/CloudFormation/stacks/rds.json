@@ -68,7 +68,7 @@
         ]
       }
     },
-    "AtlassianDb" : {
+    "DrupalDb" : {
       "Type" : "AWS::RDS::DBInstance",
       "Properties" : {
          "VPCSecurityGroups" : [ {"Ref" : "Drupal7DbSecurityGroup"} ],
