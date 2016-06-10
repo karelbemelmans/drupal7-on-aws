@@ -15,7 +15,3 @@ then
 else
   echo "CloudFormation files did not validate, not copying to S3!"
 fi
-
-echo "# User Data"
-aws s3 rm s3://$BUCKET/user-data --region $REGION --recursive
-aws s3 cp user-data s3://$BUCKET/user-data --region $REGION --recursive 
