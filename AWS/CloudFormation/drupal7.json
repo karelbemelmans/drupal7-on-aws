@@ -3,11 +3,13 @@
   "Description": "Stack for Drupal 7",
 
   "Parameters": {
+
     "KeyPairName": {
       "Description": "The key pair name to connect to the instances",
       "Type": "AWS::EC2::KeyPair::KeyName",
       "Default": "CloudFormationKeyPair"
     },
+
     "InstanceType": {
       "Description": "WebServer EC2 instance type",
       "Type": "String",
@@ -15,45 +17,60 @@
       "AllowedValues": ["t2.micro", "t2.small"],
       "ConstraintDescription": "must be a t2.micro or t2.small instance type"
     },
+
     "VpcCidrBlock": {
       "Description": "VPC CIDR block",
       "Type": "String",
       "Default": "10.42.0.0/16"
     },
+
     "PublicSubnetOneCidr": {
       "Description": "The CIDR ranges of the public subnets",
       "Type": "String",
       "Default": "10.42.0.0/18"
     },
+
     "PublicSubnetTwoCidr": {
       "Description": "The CIDR ranges of the public subnets",
       "Type": "String",
       "Default": "10.42.64.0/18"
     },
+
     "PrivateSubnetOneCidr": {
       "Description": "The CIDR ranges of the private subnets",
       "Type": "String",
       "Default": "10.42.128.0/18"
     },
+
     "PrivateSubnetTwoCidr": {
       "Description": "The CIDR ranges of the private subnets",
       "Type": "String",
       "Default": "10.42.192.0/18"
     },
+
     "DbMasterUsername": {
       "Description": "The Master username for the Drupal DB",
       "Type": "String",
-      "Default": ""
+      "MinLength": "1",
+      "MaxLength": "64",
+      "AllowedPattern" : "[a-zA-Z][a-zA-Z0-9]*",
+      "ConstraintDescription" : "must begin with a letter and contain only alphanumeric characters."
     },
+
     "DbMasterPassword": {
       "Description": "The Master password for the Drupal DB",
       "Type": "String",
-      "Default": ""
+      "MinLength": "1",
+      "MaxLength": "16",
+      "AllowedPattern" : "[a-zA-Z][a-zA-Z0-9]*",
+      "ConstraintDescription" : "must begin with a letter and contain only alphanumeric characters."
     },
+
     "PaperTrailDestination": {
       "Description": "Papertrail destination (host:port)",
       "Type": "String"
     },
+
     "WebServerCapacity": {
       "Default": "1",
       "Description" : "The initial number of WebServer instances",
@@ -62,13 +79,25 @@
       "MaxValue": "5",
       "ConstraintDescription" : "must be between 1 and 5 EC2 instances."
     },
-    "DBInstanceType": {
-      "Description": "RDS DB EC2 instance type",
-      "Type": "String",
-      "Default": "db.t2.small",
-      "AllowedValues": ["db.t2.micro", "db.t2.small"],
-      "ConstraintDescription": "must be a db.t2.micro or db.t2.small instance type"
+
+    "DBClass" : {
+      "Description" : "Database instance class",
+      "Type" : "String",
+      "Default" : "db.t2.small",
+      "AllowedValues" : [ "db.t1.micro", "db.m1.small", "db.m1.medium", "db.m1.large", "db.m1.xlarge", "db.m2.xlarge", "db.m2.2xlarge", "db.m2.4xlarge", "db.m3.medium", "db.m3.large", "db.m3.xlarge", "db.m3.2xlarge", "db.m4.large", "db.m4.xlarge", "db.m4.2xlarge", "db.m4.4xlarge", "db.m4.10xlarge", "db.r3.large", "db.r3.xlarge", "db.r3.2xlarge", "db.r3.4xlarge", "db.r3.8xlarge", "db.m2.xlarge", "db.m2.2xlarge", "db.m2.4xlarge", "db.cr1.8xlarge", "db.t2.micro", "db.t2.small", "db.t2.medium", "db.t2.large"]
+,
+      "ConstraintDescription" : "must select a valid database instance type."
+    },
+
+    "DBAllocatedStorage" : {
+      "Default": "5",
+      "Description" : "The size of the database (Gb)",
+      "Type": "Number",
+      "MinValue": "5",
+      "MaxValue": "1024",
+      "ConstraintDescription" : "must be between 5 and 1024Gb."
     }
+
   },
 
   "Mappings": {
@@ -447,10 +476,9 @@
     "DrupalDb" : {
       "Type" : "AWS::RDS::DBInstance",
       "Properties" : {
-        "AllocatedStorage" : "10",
-        "VPCSecurityGroups" : [
-          {"Ref" : "Drupal7DbSecurityGroup"} ],
-        "DBInstanceClass" : { "Ref": "DBInstanceType" },
+        "AllocatedStorage" : { "Ref" : "DBAllocatedStorage" },
+        "VPCSecurityGroups" : [ { "Ref" : "Drupal7DbSecurityGroup"} ],
+        "DBInstanceClass" : { "Ref": "DBClass" },
         "StorageType": "gp2",
         "MultiAZ": true,
         "DBSubnetGroupName" : { "Ref" : "Drupal7DBSubnetGroup" },
@@ -467,7 +495,7 @@
       "DeletionPolicy" : "Snapshot"
     },
 
-    "WhiteListedSitesHttpsSg": {
+    "DrupalELBPublicAccess": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "Security group for public HTTP and HTTPS access",
@@ -476,12 +504,6 @@
             "IpProtocol": "tcp",
             "FromPort": "80",
             "ToPort": "80",
-            "CidrIp": "0.0.0.0/32"
-          },
-          {
-            "IpProtocol": "tcp",
-            "FromPort": "443",
-            "ToPort": "443",
             "CidrIp": "0.0.0.0/32"
           }
         ],
@@ -575,7 +597,8 @@
           "UnhealthyThreshold" : "5",
           "Interval" : "10",
           "Timeout" : "5"
-        }
+        },
+        "SecurityGroups": [ { "Ref": "DrupalELBPublicAccess" } ]
       }
     },
 
