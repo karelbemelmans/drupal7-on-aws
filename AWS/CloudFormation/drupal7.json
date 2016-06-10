@@ -65,11 +65,6 @@
       "ConstraintDescription" : "must begin with a letter and contain only alphanumeric characters."
     },
 
-    "PaperTrailDestination": {
-      "Description": "Papertrail destination (host:port)",
-      "Type": "String"
-    },
-
     "WebServerCapacity": {
       "Default": "1",
       "Description" : "The initial number of WebServer instances",
@@ -86,6 +81,14 @@
       "AllowedValues" : [ "db.t1.micro", "db.m1.small", "db.m1.medium", "db.m1.large", "db.m1.xlarge", "db.m2.xlarge", "db.m2.2xlarge", "db.m2.4xlarge", "db.m3.medium", "db.m3.large", "db.m3.xlarge", "db.m3.2xlarge", "db.m4.large", "db.m4.xlarge", "db.m4.2xlarge", "db.m4.4xlarge", "db.m4.10xlarge", "db.r3.large", "db.r3.xlarge", "db.r3.2xlarge", "db.r3.4xlarge", "db.r3.8xlarge", "db.m2.xlarge", "db.m2.2xlarge", "db.m2.4xlarge", "db.cr1.8xlarge", "db.t2.micro", "db.t2.small", "db.t2.medium", "db.t2.large"]
 ,
       "ConstraintDescription" : "must select a valid database instance type."
+    },
+
+    "MultiAZDatabase": {
+      "Default": "false",
+      "Description" : "Create a Multi-AZ MySQL Amazon RDS database instance. This will take a while to create.",
+      "Type": "String",
+      "AllowedValues" : [ "true", "false" ],
+      "ConstraintDescription" : "must be either true or false."
     },
 
     "DBAllocatedStorage" : {
@@ -117,6 +120,13 @@
         "64": "ami-d0f506b0",
         "Description": "Amazon Linux AMI 2016.03.1 (HVM), SSD Volume Type, us-west-2"
       }
+    }
+  },
+
+  "Outputs" : {
+    "WebsiteURL" : {
+      "Description" : "URL for newly created Drupal stack",
+      "Value" : { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : [ "DrupalWebServerElasticLoadBalancer", "DNSName" ]}]] }
     }
   },
 
@@ -159,7 +169,7 @@
         "CidrBlock": { "Ref": "VpcCidrBlock" },
         "Tags": [{
           "Key": "Name",
-          "Value": "Drupal 7 stack VPC"
+          "Value": "Drupal 7 VPC"
         }]
       }
     },
@@ -428,12 +438,13 @@
         "DBInstanceClass" : { "Ref": "DBClass" },
         "Engine": "MySQL",
         "StorageType": "gp2",
-        "MultiAZ": true,
+        "MultiAZ" : { "Ref": "MultiAZDatabase" },
         "DBSubnetGroupName" : { "Ref" : "Drupal7DBSubnetGroup" },
-        "DBInstanceIdentifier": "drupal7",
+        "DBInstanceIdentifier": "drupal7-db",
         "PreferredBackupWindow": "02:00-03:30",
         "BackupRetentionPeriod": "7",
         "PreferredMaintenanceWindow": "sun:04:00-sun:06:00",
+        "DBName": "drupal7",
         "MasterUsername" : { "Ref": "DbMasterUsername" },
         "MasterUserPassword" : { "Ref": "DbMasterPassword" },
         "Tags": [
@@ -446,7 +457,7 @@
     "DrupalELBPublicAccess": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
-        "GroupDescription": "Security group for public HTTP and HTTPS access",
+        "GroupDescription": "Security group for public HTTP access",
         "SecurityGroupIngress": [
           {
             "IpProtocol": "tcp",
@@ -455,16 +466,14 @@
             "CidrIp": "0.0.0.0/0"
           }
         ],
-        "VpcId": {
-          "Ref": "VPC"
-        }
+        "VpcId": { "Ref": "VPC" }
       }
     },
 
     "DrupalWebServerSecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
-        "GroupDescription": "Security group for the Drupal web server inside the private subnet",
+        "GroupDescription": "Security group for the Drupal Web Server instances",
         "SecurityGroupIngress": [
           {
             "IpProtocol": "tcp",
@@ -477,6 +486,12 @@
             "FromPort": "80",
             "ToPort": "80",
             "CidrIp": { "Ref": "PrivateSubnetTwoCidr"}
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": { "Ref": "VpcCidrBlock" }
           }
         ],
         "VpcId": { "Ref": "VPC" },
@@ -504,20 +519,23 @@
         "MinSize" : "1",
         "MaxSize" : "5",
         "DesiredCapacity" : { "Ref" : "WebServerCapacity" },
-        "LoadBalancerNames" : [ { "Ref" : "DrupalWebServerElasticLoadBalancer" } ]
-      },
-      "CreationPolicy" : {
-        "ResourceSignal" : {
-          "Timeout" : "PT15M"
-        }
-      },
-      "UpdatePolicy": {
-        "AutoScalingRollingUpdate": {
-          "MinInstancesInService": "1",
-          "MaxBatchSize": "1",
-          "PauseTime" : "PT15M",
-          "WaitOnResourceSignals": "true"
-        }
+        "LoadBalancerNames" : [ { "Ref" : "DrupalWebServerElasticLoadBalancer" } ],
+        "VPCZoneIdentifier": [
+          { "Ref": "PrivateSubnetOne" },
+          { "Ref": "PrivateSubnetTwo" }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Drupal Web Server",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "Service",
+            "Value": "Drupal",
+            "PropagateAtLaunch": true
+          }
+        ]
       }
     },
 
@@ -525,8 +543,8 @@
       "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties" : {
         "Subnets": [
-          { "Ref": "PrivateSubnetOne" },
-          { "Ref": "PrivateSubnetTwo" }
+          { "Ref": "PublicSubnetOne" },
+          { "Ref": "PublicSubnetTwo" }
         ],
         "CrossZone" : "true",
         "LBCookieStickinessPolicy" : [ {
@@ -540,7 +558,7 @@
           "PolicyNames" : [ "CookieBasedPolicy" ]
         } ],
         "HealthCheck" : {
-          "Target" : "HTTP:80/index.php",
+          "Target" : "HTTP:80/install.php",
           "HealthyThreshold" : "2",
           "UnhealthyThreshold" : "5",
           "Interval" : "10",
@@ -555,9 +573,10 @@
       "Metadata" : {
         "AWS::CloudFormation::Init" : {
           "configSets" : {
-              "drupal_install" : [ "config" ]
+              "drupal_install" : [ "install", "run" ]
           },
-          "config" : {
+
+          "install" : {
 
             "packages" : {
               "yum" : {
@@ -567,7 +586,11 @@
 
             "services" : {
               "sysvinit" : {
-                "docker" : { "enabled" : "true", "ensureRunning" : "true" }
+                "docker" : {
+                  "enabled" : "true",
+                  "ensureRunning" : "true",
+                  "packages" : { "yum" : ["docker"] }
+                }
               }
             },
 
@@ -575,19 +598,20 @@
 
               "/tmp/settings.php": {
                 "content":  { "Fn::Join" : [ "", [
+                  "<?php\n\n",
                   "$databases['default']['default'] = array(\n",
                   "  'driver' => 'mysql',\n",
-                  "  'database' => 'databasename',\n",
-                  "  'username' => '", { "Ref": "DbMasterUsername" }, "'\n",
-                  "  'password' => '", { "Ref": "DbMasterUsername" }, "'\n",
+                  "  'database' => 'drupal7',\n",
+                  "  'username' => '", { "Ref": "DbMasterUsername" }, ",'\n",
+                  "  'password' => '", { "Ref": "DbMasterPassword" }, ",'\n",
                   "  'host' => '", { "Fn::Join": [":",[
                         { "Fn::GetAtt" : [ "DrupalDb", "Endpoint.Address" ] },
                         { "Fn::GetAtt" : [ "DrupalDb", "Endpoint.Port" ] }
-                      ] ] }, "'\n",
+                      ] ] }, ",'\n",
                   "  'prefix' => ''\n",
                   ");\n"
                 ]]},
-                "mode" : "000400",
+                "mode" : "000644",
                 "owner" : "root",
                 "group" : "root"
               },
@@ -595,7 +619,7 @@
               "/tmp/Dockerfile": {
                 "content":  { "Fn::Join" : [ "", [
                   "FROM drupal:7-apache\n",
-                  "COPY /tmp/settings.php /var/www/html/files/default/settings.php\n",
+                  "COPY settings.php /var/www/html/sites/default/settings.php\n",
                   "# TODO: Add memcached contrib module\n",
                   "# TODO: Add S3 contrib module\n"
                 ]]},
@@ -607,15 +631,13 @@
               "/tmp/docker-compose.yml": {
                 "content":  { "Fn::Join" : [ "", [
                   "drupal:\n",
-                  "build: .\n",
-                  "ports:\n",
-                  "  - \"80:80\"\n",
-                  "log_driver: syslog\n",
-                  "log_opt:\n",
-                  "  syslog-address: ", { "Ref": "PaperTrailDestination" } , "\n",
-                  "  tag: \"drupal7\"\n"
+                  "  build: .\n",
+                  "  ports:\n",
+                  "    - \"80:80\"\n",
+                  "  volumes:\n",
+                  "    - ./config:/tmp/config\n"
                 ]]},
-                "mode" : "000400",
+                "mode" : "000644",
                 "owner" : "root",
                 "group" : "root"
               },
@@ -626,10 +648,23 @@
                   "curl -L https://github.com/docker/compose/releases/download/1.7.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose\n",
                   "chmod +x /usr/local/bin/docker-compose\n"
                 ]]},
-                "mode" : "000500",
+                "mode" : "000755",
                 "owner" : "root",
                 "group" : "root"
-              },
+              }
+            },
+
+            "commands" : {
+              "01_install_docker_compose": {
+                "command" : "/tmp/install-docker-compose.sh",
+                "cwd" : "/tmp"
+              }
+            }
+          },
+
+          "run" : {
+
+            "files" : {
 
               "/tmp/start-drupal-container.sh" : {
                 "content" : { "Fn::Join" : [ "", [
@@ -641,21 +676,16 @@
                 "owner" : "root",
                 "group" : "root"
               }
-
             },
 
             "commands" : {
-              "01_install_docker_compose": {
-                "command" : "/tmp/install-docker-compose.sh",
-                "cwd" : "/tmp"
-              },
-
               "10_start_drupal_container" : {
                 "command" : "/tmp/start-drupal-container.sh",
                 "cwd" : "/tmp"
               }
             }
           }
+
         }
       },
       "Properties": {
@@ -665,9 +695,7 @@
         },
         "InstanceMonitoring": false,
         "InstanceType": "t2.small",
-        "KeyName": {
-          "Ref": "KeyPairName"
-        },
+        "KeyName": { "Ref": "KeyPairName" },
         "SecurityGroups": [
           { "Ref": "DrupalWebServerSecurityGroup" }
         ],
@@ -682,7 +710,7 @@
 
                        "/opt/aws/bin/cfn-init -v ",
                        "         --stack ", { "Ref" : "AWS::StackName" },
-                       "         --resource LaunchConfig ",
+                       "         --resource LaunchConfigurationForDrupalWebServer ",
                        "         --configsets drupal_install ",
                        "         --region ", { "Ref" : "AWS::Region" }, "\n",
 
