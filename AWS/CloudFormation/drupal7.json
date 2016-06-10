@@ -596,12 +596,12 @@
                   "$databases['default']['default'] = array(\n",
                   "  'driver' => 'mysql',\n",
                   "  'database' => 'drupal7',\n",
-                  "  'username' => '", { "Ref": "DbMasterUsername" }, ",'\n",
-                  "  'password' => '", { "Ref": "DbMasterPassword" }, ",'\n",
+                  "  'username' => '", { "Ref": "DbMasterUsername" }, "',\n",
+                  "  'password' => '", { "Ref": "DbMasterPassword" }, "',\n",
                   "  'host' => '", { "Fn::Join": [":",[
                         { "Fn::GetAtt" : [ "DrupalDb", "Endpoint.Address" ] },
                         { "Fn::GetAtt" : [ "DrupalDb", "Endpoint.Port" ] }
-                      ] ] }, ",'\n",
+                      ] ] }, "',\n",
                   "  'prefix' => ''\n",
                   ");\n"
                 ]]},
