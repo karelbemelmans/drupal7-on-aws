@@ -26,6 +26,14 @@
       "Description": "Private Subnet #2",
       "Type": "AWS::EC2::Subnet"
     },
+    "PrivateSubnetOneCidrBlock": {
+      "Description": "The CIDR block of the First Private Subnet",
+      "Type": "String"
+    },
+    "PrivateSubnetTwoCidrBlock": {
+      "Description": "The CIDR block of the Second Private Subnet",
+      "Type": "String"
+    },
     "PublicSubnetOne": {
       "Description": "Public Subnet #1",
       "Type": "AWS::EC2::Subnet"
@@ -33,29 +41,54 @@
     "PublicSubnetTwo": {
       "Description": "Public Subnet #2",
       "Type": "AWS::EC2::Subnet"
+    },
+    "DbMasterUsername": {
+      "Description": "The Master username for the Drupal DB",
+      "Type": "String"
+    },
+    "DbMasterPassword": {
+      "Description": "The Master password for the Drupal DB",
+      "Type": "String"
+    },
+    "DrupalDbConnectString": {
+      "Description": "The connect string (hostname:port) for the Drupal DB",
+      "Type": "String"
+    },
+    "PaperTrailDestination": {
+      "Description": "Papertrail destination (host:port)",
+      "Type": "String"
+    },
+    "WebServerCapacity": {
+      "Default": "1",
+      "Description" : "The initial number of WebServer instances",
+      "Type": "Number",
+      "MinValue": "1",
+      "MaxValue": "5",
+      "ConstraintDescription" : "must be between 1 and 5 EC2 instances."
     }
   },
   "Mappings": {
     "AmazonMachineImages": {
       "eu-west-1": {
-        "AmazonLinux": "ami-b0ac25c3",
+        "64": "ami-b0ac25c3",
         "Description": "Amazon Linux AMI 2016.03.1 (HVM), SSD Volume Type, eu-west-1"
       },
       "us-east-1": {
-        "AmazonLinux": "ami-f5f41398",
+        "64": "ami-f5f41398",
         "Description": "Amazon Linux AMI 2016.03.1 (HVM), SSD Volume Type, us-east-1"
       },
       "us-west-1": {
-        "AmazonLinux": "ami-6e84fa0e",
+        "64": "ami-6e84fa0e",
         "Description": "Amazon Linux AMI 2016.03.1 (HVM), SSD Volume Type, us-west-1"
       },
       "us-west-2": {
-        "AmazonLinux": "ami-d0f506b0",
+        "64": "ami-d0f506b0",
         "Description": "Amazon Linux AMI 2016.03.1 (HVM), SSD Volume Type, us-west-2"
       }
     }
   },
   "Resources": {
+
     "WhiteListedSitesHttpsSg": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
@@ -77,6 +110,227 @@
         "VpcId": {
           "Ref": "VPC"
         }
+      }
+    },
+
+    "DrupalWebServerSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for the Drupal web server inside the private subnet",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "http",
+            "FromPort": "80",
+            "ToPort": "80",
+            "CidrIp": { "Ref": "PrivateSubnetOneCidrBlock"}
+          },
+          {
+            "IpProtocol": "http",
+            "FromPort": "80",
+            "ToPort": "80",
+            "CidrIp": { "Ref": "PrivateSubnetTwoCidrBlock"}
+          }
+        ],
+        "VpcId": { "Ref": "VPC" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Drupal web server host security group"
+          },
+          {
+            "Key": "Service",
+            "Value": "Drupal"
+          }
+        ]
+      }
+    },
+
+    "DrupalWebServerAutoScalingGroup" : {
+      "Type" : "AWS::AutoScaling::AutoScalingGroup",
+      "Properties" : {
+        "AvailabilityZones" : { "Fn::GetAZs" : "" },
+        "LaunchConfigurationName" : { "Ref" : "LaunchConfigurationForDrupalWebServer" },
+        "MinSize" : "1",
+        "MaxSize" : "5",
+        "DesiredCapacity" : { "Ref" : "WebServerCapacity" },
+        "LoadBalancerNames" : [ { "Ref" : "DrupalWebServerElasticLoadBalancer" } ]
+      },
+      "CreationPolicy" : {
+        "ResourceSignal" : {
+          "Timeout" : "PT15M"
+        }
+      },
+      "UpdatePolicy": {
+        "AutoScalingRollingUpdate": {
+          "MinInstancesInService": "1",
+          "MaxBatchSize": "1",
+          "PauseTime" : "PT15M",
+          "WaitOnResourceSignals": "true"
+        }
+      }
+    },
+
+    "DrupalWebServerElasticLoadBalancer" : {
+      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties" : {
+        "Subnets": [
+          { "Ref": "PrivateSubnetOne" },
+          { "Ref": "PrivateSubnetTwo" }
+        ],
+        "CrossZone" : "true",
+        "LBCookieStickinessPolicy" : [ {
+          "PolicyName" : "CookieBasedPolicy",
+          "CookieExpirationPeriod" : "30"
+        } ],
+        "Listeners" : [ {
+          "LoadBalancerPort" : "80",
+          "InstancePort" : "80",
+          "Protocol" : "HTTP",
+          "PolicyNames" : [ "CookieBasedPolicy" ]
+        } ],
+        "HealthCheck" : {
+          "Target" : "HTTP:80/index.php",
+          "HealthyThreshold" : "2",
+          "UnhealthyThreshold" : "5",
+          "Interval" : "10",
+          "Timeout" : "5"
+        }
+      }
+    },
+
+    "LaunchConfigurationForDrupalWebServer": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "configSets" : {
+              "drupal_install" : [ "config" ]
+          },
+          "config" : {
+
+            "packages" : {
+              "yum" : {
+                "docker"       : []
+              }
+            },
+
+            "services" : {
+              "sysvinit" : {
+                "docker" : { "enabled" : "true", "ensureRunning" : "true" }
+              }
+            },
+
+            "files" : {
+
+              "/tmp/settings.php": {
+                "content":  { "Fn::Join" : [ "", [
+                  "$databases['default']['default'] = array(\n",
+                  "  'driver' => 'mysql',\n",
+                  "  'database' => 'databasename',\n",
+                  "  'username' => '", { "Ref": "DbMasterUsername" }, "'\n",
+                  "  'password' => '", { "Ref": "DbMasterUsername" }, "'\n",
+                  "  'host' => '", { "Ref": "DrupalDbConnectString" }, "'\n",
+                  "  'prefix' => ''\n",
+                  ");\n"
+                ]]},
+                "mode" : "000400",
+                "owner" : "root",
+                "group" : "root"
+              },
+
+              "/tmp/Dockerfile": {
+                "content":  { "Fn::Join" : [ "", [
+                  "FROM drupal:7-apache\n",
+                  "COPY /tmp/settings.php /var/www/html/files/default/settings.php\n"
+                ]]},
+                "mode" : "000644",
+                "owner" : "root",
+                "group" : "root"
+              },
+
+              "/tmp/docker-compose.yml": {
+                "content":  { "Fn::Join" : [ "", [
+                  "drupal:\n",
+                  "build: .\n",
+                  "ports:\n",
+                  "  - \"80:80\"\n",
+                  "log_driver: syslog\n",
+                  "log_opt:\n",
+                  "  syslog-address: ", { "Ref": "PaperTrailDestination" } , "\n",
+                  "  tag: \"drupal7\"\n"
+                ]]},
+                "mode" : "000400",
+                "owner" : "root",
+                "group" : "root"
+              },
+
+              "/tmp/install-docker-compose.sh": {
+                "content": { "Fn::Join" : [ "", [
+                  "#!/bin/bash\n",
+                  "curl -L https://github.com/docker/compose/releases/download/1.7.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose\n",
+                  "chmod +x /usr/local/bin/docker-compose\n"
+                ]]}
+              },
+
+              "/tmp/start-drupal-container.sh" : {
+                "content" : { "Fn::Join" : [ "", [
+                  "#!/bin/bash\n",
+                  "docker-compose build\n",
+                  "docker-compose up -d\n"
+                ]]},
+                "mode" : "000500",
+                "owner" : "root",
+                "group" : "root"
+              }
+
+            },
+
+            "commands" : {
+              "01_install_docker_compose": {
+                "command" : "/tmp/install-docker-compose.sh",
+                "cwd" : "/tmp"
+              },
+
+              "10_start_drupal_container" : {
+                "command" : "/tmp/start-drupal-container.sh",
+                "cwd" : "/tmp"
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "IamInstanceProfile": "DrupalWebServerInstanceProfile",
+        "ImageId": {
+          "Fn::FindInMap" : [ "AmazonMachineImages", { "Ref" : "AWS::Region" }, "64"]
+        },
+        "InstanceMonitoring": false,
+        "InstanceType": "t2.small",
+        "KeyName": {
+          "Ref": "KeyPairName"
+        },
+        "SecurityGroups": [
+          { "Ref": "DrupalWebServerSecurityGroup" }
+        ],
+        "BlockDeviceMappings" : [ {
+           "DeviceName" : "/dev/xvda",
+           "Ebs" : { "VolumeSize" : "30", "DeleteOnTermination" : "true"}
+        } ],
+
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+                       "#!/bin/bash -xe\n",
+                       "yum update -y aws-cfn-bootstrap\n",
+
+                       "/opt/aws/bin/cfn-init -v ",
+                       "         --stack ", { "Ref" : "AWS::StackName" },
+                       "         --resource LaunchConfig ",
+                       "         --configsets drupal_install ",
+                       "         --region ", { "Ref" : "AWS::Region" }, "\n",
+
+                       "/opt/aws/bin/cfn-signal -e $? ",
+                       "         --stack ", { "Ref" : "AWS::StackName" },
+                       "         --resource DrupalWebServerAutoScalingGroup ",
+                       "         --region ", { "Ref" : "AWS::Region" }, "\n"
+        ]]}}
       }
     }
   }

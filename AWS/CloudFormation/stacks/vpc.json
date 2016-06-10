@@ -9,22 +9,22 @@
     },
     "PublicSubnetOneCidr": {
       "Description": "The CIDR ranges of the public subnets",
-      "Type": "CommaDelimitedList",
+      "Type": "String",
       "Default": "10.42.0.0/18"
     },
     "PublicSubnetTwoCidr": {
       "Description": "The CIDR ranges of the public subnets",
-      "Type": "CommaDelimitedList",
+      "Type": "String",
       "Default": "10.42.64.0/18"
     },
     "PrivateSubnetOneCidr": {
       "Description": "The CIDR ranges of the private subnets",
-      "Type": "CommaDelimitedList",
+      "Type": "String",
       "Default": "10.42.128.0/18"
     },
     "PrivateSubnetTwoCidr": {
       "Description": "The CIDR ranges of the private subnets",
-      "Type": "CommaDelimitedList",
+      "Type": "String",
       "Default": "10.42.192.0/18"
     }
   },

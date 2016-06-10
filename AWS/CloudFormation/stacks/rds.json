@@ -26,10 +26,35 @@
       "Type": "String"
     },
     "PrivateSubnetTwoCidrBlock": {
-      "Description": "The CIDR block of the First Private Subnet",
+      "Description": "The CIDR block of the Second Private Subnet",
       "Type": "String"
+    },
+    "DbMasterUsername": {
+      "Description": "The Master username for the Drupal DB",
+      "Type": "String",
+      "Default": "drupal7"
+    },
+    "DbMasterPassword": {
+      "Description": "The Master password for the Drupal DB",
+      "Type": "String",
+      "Default": "drupal7"
     }
   },
+  "Outputs": {
+    "DrupalDbConnectString": {
+       "Value": { "Fn::Join": [":",[
+        { "Fn::GetAtt" : [ "DrupalDb", "Endpoint.Address" ] },
+        { "Fn::GetAtt" : [ "DrupalDb", "Endpoint.Port" ] }
+      ] ] }
+    },
+    "DbMasterUsername": {
+      "Value": { "Ref": "DbMasterUsername" }
+    },
+    "DbMasterPassword": {
+      "Value": { "Ref": "DbMasterPassword" }
+    }
+  },
+
   "Resources": {
     "Drupal7DBSubnetGroup" : {
       "Type" : "AWS::RDS::DBSubnetGroup",
@@ -71,19 +96,22 @@
     "DrupalDb" : {
       "Type" : "AWS::RDS::DBInstance",
       "Properties" : {
-         "VPCSecurityGroups" : [ {"Ref" : "Drupal7DbSecurityGroup"} ],
-         "AllocatedStorage" : "50",
-         "DBInstanceClass" : { "Ref": "DBInstanceType" },
-         "StorageType": "gp2",
-         "MultiAZ": true,
-         "DBSubnetGroupName" : { "Ref" : "Drupal7DBSubnetGroup" },
-         "DBInstanceIdentifier": "drupal7",
-         "PreferredBackupWindow": "02:00-03:30",
-         "BackupRetentionPeriod": "7",
-         "PreferredMaintenanceWindow": "sun:04:00-sun:06:00",
-         "Tags": [
-            { "Key" : "Name", "Value" : "Drupal 7 Database" }
-          ]
+        "AllocatedStorage" : "10",
+        "VPCSecurityGroups" : [
+          {"Ref" : "Drupal7DbSecurityGroup"} ],
+        "DBInstanceClass" : { "Ref": "DBInstanceType" },
+        "StorageType": "gp2",
+        "MultiAZ": true,
+        "DBSubnetGroupName" : { "Ref" : "Drupal7DBSubnetGroup" },
+        "DBInstanceIdentifier": "drupal7",
+        "PreferredBackupWindow": "02:00-03:30",
+        "BackupRetentionPeriod": "7",
+        "PreferredMaintenanceWindow": "sun:04:00-sun:06:00",
+        "MasterUsername" : { "Ref": "DbMasterUsername" },
+        "MasterUserPassword" : { "Ref": "DbMasterPassword" },
+        "Tags": [
+          { "Key" : "Name", "Value" : "Drupal 7 Database" }
+        ]
       },
       "DeletionPolicy" : "Snapshot"
     }
