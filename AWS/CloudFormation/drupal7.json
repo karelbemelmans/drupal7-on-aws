@@ -123,57 +123,6 @@
 
   "Resources": {
 
-    "SelfConfiguringResourcePolicy": {
-      "Type": "AWS::IAM::Policy",
-      "Properties": {
-        "PolicyName": "SelfConfiguringResourcePolicy",
-        "PolicyDocument": {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Sid": "Stmt1449063803000",
-              "Effect": "Allow",
-              "Action": [
-                  "ec2:CreateTags",
-                  "ec2:DescribeTags"
-              ],
-              "Resource": [
-                  "*"
-              ]
-            }
-          ]
-        },
-        "Roles": [
-          { "Ref": "IAMRoleForDrupalWebServer" }
-        ]
-      }
-    },
-
-    "WebServerSelfConfiguringPolicy": {
-      "Type": "AWS::IAM::Policy",
-      "Properties": {
-        "PolicyName": "WebServerSelfConfiguringPolicy",
-        "PolicyDocument": {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Sid": "Stmt1449063803000",
-              "Effect": "Allow",
-              "Action": [
-                  "s3:get*"
-              ],
-              "Resource": [
-                  "arn:aws:s3:::karelbemelmans-running-drupal7-on-aws/2016-06-06/user-data/*"
-              ]
-            }
-          ]
-        },
-        "Roles": [
-          { "Ref": "IAMRoleForDrupalWebServer" }
-        ]
-      }
-    },
-
     "IAMRoleForDrupalWebServer": {
       "Type": "AWS::IAM::Role",
       "Properties": {
@@ -647,7 +596,9 @@
               "/tmp/Dockerfile": {
                 "content":  { "Fn::Join" : [ "", [
                   "FROM drupal:7-apache\n",
-                  "COPY /tmp/settings.php /var/www/html/files/default/settings.php\n"
+                  "COPY /tmp/settings.php /var/www/html/files/default/settings.php\n",
+                  "# TODO: Add memcached contrib module\n",
+                  "# TODO: Add S3 contrib module\n"
                 ]]},
                 "mode" : "000644",
                 "owner" : "root",
@@ -675,14 +626,17 @@
                   "#!/bin/bash\n",
                   "curl -L https://github.com/docker/compose/releases/download/1.7.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose\n",
                   "chmod +x /usr/local/bin/docker-compose\n"
-                ]]}
+                ]]},
+                "mode" : "000500",
+                "owner" : "root",
+                "group" : "root"
               },
 
               "/tmp/start-drupal-container.sh" : {
                 "content" : { "Fn::Join" : [ "", [
                   "#!/bin/bash\n",
-                  "docker-compose build\n",
-                  "docker-compose up -d\n"
+                  "/usr/local/bin/docker-compose build\n",
+                  "/usr/local/bin/docker-compose up -d\n"
                 ]]},
                 "mode" : "000500",
                 "owner" : "root",
