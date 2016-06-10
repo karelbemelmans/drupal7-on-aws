@@ -593,6 +593,7 @@
               "/tmp/settings.php": {
                 "content":  { "Fn::Join" : [ "", [
                   "<?php\n\n",
+
                   "// This is a very minimal settings.php file.\n",
                   "$databases['default']['default'] = array(\n",
                   "  'driver' => 'mysql',\n",
@@ -604,7 +605,23 @@
                         { "Fn::GetAtt" : [ "DrupalDb", "Endpoint.Port" ] }
                       ] ] }, "',\n",
                   "  'prefix' => ''\n",
-                  ");\n"
+                  ");\n",
+
+                  "$conf['cache_backends'][] = 'sites/all/modules/contrib/memcache/memcache.inc';\n",
+                  "$conf['lock_inc'] = 'sites/all/modules/memcache/memcache-lock.inc';\n",
+                  "$conf['memcache_stampede_protection'] = TRUE;\n",
+                  "$conf['cache_default_class'] = 'MemCacheDrupal';\n",
+                  "// The 'cache_form' bin must be assigned no non-volatile storage.\n",
+                  "$conf['cache_class_cache_form'] = 'DrupalDatabaseCache';\n",
+
+                  "// Don't bootstrap the database when serving pages from the cache.\n",
+                  "$conf['page_cache_without_database'] = TRUE;\n",
+                  "$conf['page_cache_invoke_hooks'] = FALSE;\n",
+                  "$conf['memcache_servers'] = array('", { "Fn::Join": [":",[
+                        { "Fn::GetAtt" : [ "DrupalElasticacheCluster", "ConfigurationEndpoint.Address" ] },
+                        { "Fn::GetAtt" : [ "DrupalElasticacheCluster", "ConfigurationEndpoint.Port" ] }
+                      ] ] }, "' => 'default'\n"
+
                 ]]},
                 "mode" : "000644",
                 "owner" : "root",
@@ -618,24 +635,24 @@
                   "COPY settings.php /var/www/html/sites/default/settings.php\n",
 
                   "# Add memcached contrib module\n",
-                  "RUN mkdir -p /var/www/html/sites/all/modules/contrib/memcache \
-                    && curl -Lks https://ftp.drupal.org/files/projects/memcache-7.x-1.5.tar.gz \
-                    | tar --strip=1 -xzC /var/www/html/sites/all/modules/contrib/memcache\n",
+                  "RUN mkdir -p /var/www/html/sites/all/modules/contrib/memcache \\n",
+                  "  && curl -Lks https://ftp.drupal.org/files/projects/memcache-7.x-1.5.tar.gz \\n",
+                  "  | tar --strip=1 -xzC /var/www/html/sites/all/modules/contrib/memcache\n",
 
-                  "# Add Libraries contrib module\n"
-                  "RUN mkdir -p /var/www/html/sites/all/modules/contrib/libraries \
-                    && curl -Lks https://ftp.drupal.org/files/projects/libraries-7.x-2.3.tar.gz \
-                    | tar --strip=1 -xzC /var/www/html/sites/all/modules/contrib/libraries\n",
+                  "# Add Libraries contrib module\n",
+                  "RUN mkdir -p /var/www/html/sites/all/modules/contrib/libraries \\n",
+                  "  && curl -Lks https://ftp.drupal.org/files/projects/libraries-7.x-2.3.tar.gz \\n",
+                  "  | tar --strip=1 -xzC /var/www/html/sites/all/modules/contrib/libraries\n",
 
-                  "# Add awssdk2 library, needed for s3fs\n"
-                  "RUN mkdir -p /var/www/html/sites/all/libraries/awssdk2 \
-                    && curl -Lks https://github.com/aws/aws-sdk-php/releases/download/2.6.3/aws.zip \
-                    | tar --strip=1 -xzC /var/www/html/sites/all/libraries/awssdk2\n",
+                  "# Add awssdk2 library, needed for s3fs\n",
+                  "RUN mkdir -p /var/www/html/sites/all/libraries/awssdk2 \\n",
+                  "  && curl -Lks https://github.com/aws/aws-sdk-php/releases/download/2.6.3/aws.zip \\n",
+                  "  | tar --strip=1 -xzC /var/www/html/sites/all/libraries/awssdk2\n",
 
-                  "# Add S3fs contrib module\n"
-                  "RUN mkdir -p /var/www/html/sites/all/modules/contrib/s3fs \
-                    && curl -Lks https://ftp.drupal.org/files/projects/s3fs-7.x-2.5.tar.gz \
-                    | tar --strip=1 -xzC /var/www/html/sites/all/modules/contrib/s3fs\n",
+                  "# Add S3fs contrib module\n",
+                  "RUN mkdir -p /var/www/html/sites/all/modules/contrib/s3fs \\n",
+                  "  && curl -Lks https://ftp.drupal.org/files/projects/s3fs-7.x-2.5.tar.gz \\n",
+                  "  | tar --strip=1 -xzC /var/www/html/sites/all/modules/contrib/s3fs\n"
 
                 ]]},
                 "mode" : "000644",
