@@ -13,6 +13,7 @@
               "Sid": "Stmt1449063803000",
               "Effect": "Allow",
               "Action": [
+                  "ec2:CreateTags",
                   "ec2:DescribeTags"
               ],
               "Resource": [

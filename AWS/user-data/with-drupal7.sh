@@ -30,6 +30,7 @@ INSTANCE_REGION=$(curl http://169.254.169.254/latest/dynamic/instance-identity/d
 #             "Sid": "Stmt1449063803000",
 #             "Effect": "Allow",
 #             "Action": [
+#                 "ec2:CreateTags",
 #                 "ec2:DescribeTags"
 #             ],
 #             "Resource": [
