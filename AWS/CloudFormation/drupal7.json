@@ -632,7 +632,14 @@
                 "content":  { "Fn::Join" : [ "", [
 
                   "FROM drupal:7-apache\n",
+
+                  "# Add pecl memcache module\n",
+                  "RUN apt-get update && apt-get install -y libmemcached-dev \\n",
+                  "  && pecl install memcached \\n",
+                  "  && docker-php-ext-enable memcached\n",
+
                   "COPY settings.php /var/www/html/sites/default/settings.php\n",
+
 
                   "# Add memcached contrib module\n",
                   "RUN mkdir -p /var/www/html/sites/all/modules/contrib/memcache \\n",
