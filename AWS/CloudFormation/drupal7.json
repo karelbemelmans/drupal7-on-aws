@@ -479,13 +479,7 @@
             "IpProtocol": "tcp",
             "FromPort": "80",
             "ToPort": "80",
-            "CidrIp": { "Ref": "PrivateSubnetOneCidr"}
-          },
-          {
-            "IpProtocol": "tcp",
-            "FromPort": "80",
-            "ToPort": "80",
-            "CidrIp": { "Ref": "PrivateSubnetTwoCidr"}
+            "CidrIp": { "Ref": "VpcCidrBlock"}
           },
           {
             "IpProtocol": "tcp",
