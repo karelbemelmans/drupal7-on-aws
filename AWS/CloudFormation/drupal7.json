@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Stack for Drupal 7",
+  "Description": "Custom VPC and Multi-AZ stack for Drupal 7 with MySQL DB, memcached and S3 file storage",
 
   "Parameters": {
 
