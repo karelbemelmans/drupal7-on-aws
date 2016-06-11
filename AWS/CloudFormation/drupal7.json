@@ -591,6 +591,20 @@
             "PropagateAtLaunch": true
           }
         ]
+      },
+      "CreationPolicy" : {
+        "ResourceSignal" : {
+          "Timeout" : "PT5M",
+          "Count"   : { "Ref" : "WebServerCapacity" }
+        }
+      },
+      "UpdatePolicy": {
+        "AutoScalingRollingUpdate": {
+          "MinInstancesInService": "1",
+          "MaxBatchSize": "1",
+          "PauseTime" : "PT15M",
+          "WaitOnResourceSignals": "true"
+        }
       }
     },
 
@@ -626,6 +640,9 @@
     "LaunchConfigurationForDrupalWebServer": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Metadata" : {
+        "Comment1" : "Configure the bootstrap helpers to install Docker and docker compose",
+        "Comment2" : "The website content is downloaded as a Docker container",
+
         "AWS::CloudFormation::Init" : {
           "configSets" : {
               "drupal_install" : [ "install", "run" ]
@@ -698,36 +715,40 @@
 
                   "FROM drupal:7-apache\n",
 
+                  "# Add some extra packages we need in this file\n",
                   "RUN apt-get update && apt-get install -y unzip && rm -rf /var/lib/apt/lists/* \n",
+
+                  "# Create the sites/default/files folder so Drupal can write caches to it\n",
+                  "RUN mkdir -p sites/default/files && chown www-data:www-data sites/default/files\n",
 
                   "# Add pecl memcache module\n",
                   "RUN apt-get update && apt-get install -y libmemcached-dev",
                   "  && pecl install memcached",
                   "  && docker-php-ext-enable memcached\n",
 
-                  "COPY settings.php /var/www/html/sites/default/settings.php\n",
+                  "COPY settings.php sites/default/settings.php\n",
 
                   "# Add memcached contrib module\n",
-                  "RUN mkdir -p /var/www/html/sites/all/modules/contrib/memcache",
+                  "RUN mkdir -p sites/all/modules/contrib/memcache",
                   "  && curl -Lks https://ftp.drupal.org/files/projects/memcache-7.x-1.5.tar.gz",
-                  "  | tar --strip=1 -xzC /var/www/html/sites/all/modules/contrib/memcache\n",
+                  "  | tar --strip=1 -xzC sites/all/modules/contrib/memcache\n",
 
                   "# Add Libraries contrib module\n",
-                  "RUN mkdir -p /var/www/html/sites/all/modules/contrib/libraries",
+                  "RUN mkdir -p sites/all/modules/contrib/libraries",
                   "  && curl -Lks https://ftp.drupal.org/files/projects/libraries-7.x-2.3.tar.gz",
-                  "  | tar --strip=1 -xzC /var/www/html/sites/all/modules/contrib/libraries\n",
+                  "  | tar --strip=1 -xzC sites/all/modules/contrib/libraries\n",
 
                   "# Add awssdk2 library, needed for s3fs\n",
                   "ENV AWSSDK_MD5 fe0596207f39affa2ba2ee83a7db1064\n",
                   "RUN curl -Lks https://github.com/aws/aws-sdk-php/releases/download/2.7.25/aws.zip -o /tmp/aws.zip",
                   "  && echo \"${AWSSDK_MD5} /tmp/aws.zip\" | md5sum -c - ",
-                  "  && unzip /tmp/aws.zip -d /var/www/html/sites/all/libraries/awssdk2/",
+                  "  && unzip /tmp/aws.zip -d sites/all/libraries/awssdk2/",
                   "  && rm -f /tmp/aws.zip\n",
 
                   "# Add S3fs contrib module\n",
-                  "RUN mkdir -p /var/www/html/sites/all/modules/contrib/s3fs",
+                  "RUN mkdir -p sites/all/modules/contrib/s3fs",
                   "  && curl -Lks https://ftp.drupal.org/files/projects/s3fs-7.x-2.5.tar.gz",
-                  "  | tar --strip=1 -xzC /var/www/html/sites/all/modules/contrib/s3fs\n"
+                  "  | tar --strip=1 -xzC sites/all/modules/contrib/s3fs\n"
 
                 ]]},
                 "mode" : "000644",
@@ -798,10 +819,10 @@
                 "content": { "Fn::Join" : ["", [
                   "[cfn-auto-reloader-hook]\n",
                   "triggers=post.update\n",
-                  "path=Resources.LaunchConfig.Metadata.AWS::CloudFormation::Init\n",
+                  "path=Resources.LaunchConfigurationForDrupalWebServer.Metadata.AWS::CloudFormation::Init\n",
                   "action=/opt/aws/bin/cfn-init -v ",
                   "         --stack ", { "Ref" : "AWS::StackName" },
-                  "         --resource LaunchConfig ",
+                  "         --resource LaunchConfigurationForDrupalWebServer ",
                   "         --region ", { "Ref" : "AWS::Region" }, "\n",
                   "runas=root\n"
                 ]]}
