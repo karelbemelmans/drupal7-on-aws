@@ -9,7 +9,7 @@
       "Type": "AWS::EC2::KeyPair::KeyName"
     },
 
-    "InstanceType": {
+    "WebServerInstanceType": {
       "Description": "WebServer EC2 instance type",
       "Type": "String",
       "Default": "t2.small",
@@ -668,8 +668,11 @@
                   "  | tar --strip=1 -xzC /var/www/html/sites/all/modules/contrib/libraries\n",
 
                   "# Add awssdk2 library, needed for s3fs\n",
-                  "ADD https://github.com/aws/aws-sdk-php/releases/download/2.6.3/aws.zip",
-                  "  /var/www/html/sites/all/libraries/awssdk2\n",
+                  "ENV AWSSDK_MD5 c2067bc51270ed6e6fdd7e2ffdd1953d\n",
+                  "RUN curl -Lks https://github.com/aws/aws-sdk-php/releases/download/2.6.3/aws.zip -o /tmp/aws.zip",
+                  "  && echo \"${AWSSDK_MD5} /tmp/aws.zip\" | md5sum -c - ",
+                  "  && unzip /tmp/aws.zip -d /var/www/html/sites/all/libraries/awssdk2/",
+                  "  && rm -f /tmp/aws.zip\n",
 
                   "# Add S3fs contrib module\n",
                   "RUN mkdir -p /var/www/html/sites/all/modules/contrib/s3fs",
@@ -779,7 +782,7 @@
           "Fn::FindInMap" : [ "AmazonMachineImages", { "Ref" : "AWS::Region" }, "64"]
         },
         "InstanceMonitoring": false,
-        "InstanceType": "t2.small",
+        "InstanceType": { "Ref": "WebServerInstanceType" },
         "KeyName": { "Ref": "KeyPairName" },
         "SecurityGroups": [
           { "Ref": "DrupalWebServerSecurityGroup" }
