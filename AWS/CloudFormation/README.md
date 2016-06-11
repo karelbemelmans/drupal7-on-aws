@@ -1,6 +1,6 @@
 ## Drupal 7 CloudFormation stack
 
-The file drupal7.json contains the full CloudFormation stack that creates Multi-AZ Drupal setup.
+The file drupal7.json contains the full CloudFormation stack that creates the Multi-AZ Drupal setup.
 
 Read more about it on [my blog](https://www.karelbemelmans.com/2016/06/running-drupal-7-on-aws---part-2/).
 
@@ -9,5 +9,5 @@ Read more about it on [my blog](https://www.karelbemelmans.com/2016/06/running-d
 Things still missing from this stack:
 
   - CloudFront (right now you connect straight to the ELB)
-  - Papertrail loggin
+  - Papertrail logging
   - Use more CloudWatch metrics for the Auto Scaling Group
