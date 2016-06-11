@@ -668,7 +668,7 @@
                   "  | tar --strip=1 -xzC /var/www/html/sites/all/modules/contrib/libraries\n",
 
                   "# Add awssdk2 library, needed for s3fs\n",
-                  "ADD https://github.com/aws/aws-sdk-php/releases/download/2.6.3/aws.zip"
+                  "ADD https://github.com/aws/aws-sdk-php/releases/download/2.6.3/aws.zip",
                   "  /var/www/html/sites/all/libraries/awssdk2\n",
 
                   "# Add S3fs contrib module\n",
