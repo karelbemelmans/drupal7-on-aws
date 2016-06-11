@@ -371,6 +371,18 @@
             "ToPort": "11211",
             "CidrIp": {"Ref": "PrivateSubnetTwoCidr"}
           }
+        ],
+        "VpcId": { "Ref": "VPC" }
+      }
+    },
+
+    "DrupalElasticacheSubnetGroup" : {
+      "Type" : "AWS::ElastiCache::SubnetGroup",
+      "Properties" : {
+        "Description" : "Cache Subnet Group",
+        "SubnetIds" : [
+          { "Ref" : "PrivateSubnetOne" },
+          { "Ref" : "PrivateSubnetTwo" }
         ]
       }
     },
@@ -378,12 +390,15 @@
     "DrupalElasticacheCluster": {
       "Type": "AWS::ElastiCache::CacheCluster",
       "Properties": {
+        "CacheNodeType": "cache.t1.micro",
         "AutoMinorVersionUpgrade": "true",
         "AZMode" : "cross-az",
         "Engine": "memcached",
-        "CacheNodeType": "cache.t1.micro",
         "NumCacheNodes": "2",
-        "VpcSecurityGroupIds": [{"Fn::GetAtt": [ "DrupalElasticacheSecurityGroup", "GroupId"]}],
+        "VpcSecurityGroupIds": [
+          { "Ref": "DrupalElasticacheSecurityGroup" }
+        ],
+        "CacheSubnetGroupName": "DrupalElasticacheSubnetGroup",
         "PreferredAvailabilityZones" : [
           { "Fn::GetAtt" : [ "PrivateSubnetOne", "AvailabilityZone" ] },
           { "Fn::GetAtt" : [ "PrivateSubnetTwo", "AvailabilityZone" ] }
@@ -688,6 +703,7 @@
                 "owner" : "root",
                 "group" : "root"
               }
+
             },
 
             "commands" : {
