@@ -625,7 +625,7 @@
                   ");\n",
 
                   "$conf['cache_backends'][] = 'sites/all/modules/contrib/memcache/memcache.inc';\n",
-                  "$conf['lock_inc'] = 'sites/all/modules/memcache/memcache-lock.inc';\n",
+                  "$conf['lock_inc'] = 'sites/all/modules/contrib/memcache/memcache-lock.inc';\n",
                   "$conf['memcache_stampede_protection'] = TRUE;\n",
                   "$conf['cache_default_class'] = 'MemCacheDrupal';\n",
                   "// The 'cache_form' bin must be assigned no non-volatile storage.\n",
