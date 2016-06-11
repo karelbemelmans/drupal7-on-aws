@@ -1,12 +1,10 @@
 ## Drupal 7 CloudFormation stack
 
-While this code is on github, it needs to be in an AWS S3 bucket for the sub stacks
-to be able to referenced. I have a build server that pushes this automatically to this S3
-url, but you should probably fork this code and push it to your own bucket.
+The file drupal7.json contains the full CloudFormation stack that creates Multi-AZ Drupal setup.
 
-S3 top stack location: https://s3-eu-west-1.amazonaws.com/karelbemelmans-running-drupal7-on-aws/2016-06-06/CloudFormation/drupal7.json
+Read more about it on [my blog](https://www.karelbemelmans.com/2016/06/running-drupal-7-on-aws---part-2/).
 
-### Todo list
+## Todo list
 
 Things still missing from this stack:
 
