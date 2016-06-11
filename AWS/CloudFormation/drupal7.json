@@ -637,7 +637,7 @@
                   "$conf['memcache_servers'] = array('", { "Fn::Join": [":",[
                         { "Fn::GetAtt" : [ "DrupalElasticacheCluster", "ConfigurationEndpoint.Address" ] },
                         { "Fn::GetAtt" : [ "DrupalElasticacheCluster", "ConfigurationEndpoint.Port" ] }
-                      ] ] }, "' => 'default'\n"
+                      ] ] }, "' => 'default');\n"
 
                 ]]},
                 "mode" : "000644",
