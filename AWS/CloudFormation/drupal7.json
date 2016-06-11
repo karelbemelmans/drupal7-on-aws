@@ -398,7 +398,9 @@
         "VpcSecurityGroupIds": [
           { "Ref": "DrupalElasticacheSecurityGroup" }
         ],
-        "CacheSubnetGroupName": "DrupalElasticacheSubnetGroup",
+        "CacheSubnetGroupName": {
+          "Ref": "DrupalElasticacheSubnetGroup"
+        },
         "PreferredAvailabilityZones" : [
           { "Fn::GetAtt" : [ "PrivateSubnetOne", "AvailabilityZone" ] },
           { "Fn::GetAtt" : [ "PrivateSubnetTwo", "AvailabilityZone" ] }
