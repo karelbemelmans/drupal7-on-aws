@@ -132,6 +132,13 @@
 
   "Resources": {
 
+    "DrupalPublicS3Bucket" : {
+      "Type" : "AWS::S3::Bucket",
+      "Properties" : {
+        "AccessControl" : "PublicRead"
+      }
+    },
+
     "IAMRoleForDrupalWebServer": {
       "Type": "AWS::IAM::Role",
       "Properties": {
@@ -145,6 +152,43 @@
             "Action": [ "sts:AssumeRole" ]
           } ]
         },
+        "Policies": [{
+          "PolicyName": "root",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+            {
+              "Sid": "Stmt1465663413000",
+              "Effect": "Allow",
+              "Action": [
+                  "s3:ListAllMyBuckets"
+              ],
+              "Resource": [
+                  "arn:aws:s3:::*"
+              ]
+            },
+            {
+              "Sid": "Stmt1465663449000",
+              "Effect": "Allow",
+              "Action": [
+                  "s3:*"
+              ],
+              "Resource": [
+                { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref": "DrupalPublicS3Bucket" } ]] }
+              ]
+            },
+            {
+              "Sid": "Stmt1465663457000",
+              "Effect": "Allow",
+              "Action": [
+                  "s3:*"
+              ],
+              "Resource": [
+                { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref": "DrupalPublicS3Bucket" }, "/*" ]] }
+              ]
+            }]
+          }
+        }],
         "Path": "/"
       }
     },
@@ -637,7 +681,11 @@
                   "$conf['memcache_servers'] = array('", { "Fn::Join": [":",[
                         { "Fn::GetAtt" : [ "DrupalElasticacheCluster", "ConfigurationEndpoint.Address" ] },
                         { "Fn::GetAtt" : [ "DrupalElasticacheCluster", "ConfigurationEndpoint.Port" ] }
-                      ] ] }, "' => 'default');\n"
+                      ] ] }, "' => 'default');\n",
+
+                  "// s3fs bucket name\n",
+                  "$conf['s3fs_bucket'] = '", { "Ref": "DrupalPublicS3Bucket" }, "';\n",
+                  "$conf['s3fs_region'] = '", { "Ref": "AWS::Region" }, "';\n"
 
                 ]]},
                 "mode" : "000644",
