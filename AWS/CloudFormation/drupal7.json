@@ -668,9 +668,8 @@
                   "  | tar --strip=1 -xzC /var/www/html/sites/all/modules/contrib/libraries\n",
 
                   "# Add awssdk2 library, needed for s3fs\n",
-                  "RUN mkdir -p /var/www/html/sites/all/libraries/awssdk2",
-                  "  && curl -Lks https://github.com/aws/aws-sdk-php/archive/2.6.3.tar.gz",
-                  "  | tar --strip=1 -xzC /var/www/html/sites/all/libraries/awssdk2\n",
+                  "ADD https://github.com/aws/aws-sdk-php/releases/download/2.6.3/aws.zip"
+                  "  /var/www/html/sites/all/libraries/awssdk2\n",
 
                   "# Add S3fs contrib module\n",
                   "RUN mkdir -p /var/www/html/sites/all/modules/contrib/s3fs",
@@ -709,7 +708,7 @@
             },
 
             "commands" : {
-              "01_install_docker_compose": {
+              "10_install_docker_compose": {
                 "command" : "/tmp/install-docker-compose.sh",
                 "cwd" : "/tmp"
               }
