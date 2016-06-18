@@ -19,23 +19,45 @@ RUN apt-get update && apt-get install -y libmemcached-dev \
 COPY settings.php sites/default/settings.php
 
 # Add memcached contrib module
+ENV MEMCACHE_VERSION 7.x-1.5
+ENV MEMCACHE_MD5 3ea99c76b6429f0bbc8f922cd91eb459
+
 RUN mkdir -p sites/all/modules/contrib/memcache \
-  && curl -Lks https://ftp.drupal.org/files/projects/memcache-7.x-1.5.tar.gz \
-  | tar --strip=1 -xzC sites/all/modules/contrib/memcache
+  && curl -Lks https://ftp.drupal.org/files/projects/memcache-${MEMCACHE_VERSION}.tar.gz \
+       -o /tmp/memcache-${MEMCACHE_VERSION}.tar.gz \
+  && echo "${MEMCACHE_MD5} /tmp/memcache-${MEMCACHE_VERSION}.tar.gz" | md5sum -c - \
+  && tar --strip=1 -xzf /tmp/memcache-${MEMCACHE_VERSION}.tar.gz -C sites/all/modules/contrib/memcache \
+  && rm /tmp/memcache-${MEMCACHE_VERSION}.tar.gz
 
 # Add Libraries contrib module
+ENV LIBRARIES_VERSION 7.x-2.3
+ENV LIBRARIES_MD5 294d3e4096c513321159b908cfd7c2be
+
 RUN mkdir -p sites/all/modules/contrib/libraries \
-  && curl -Lks https://ftp.drupal.org/files/projects/libraries-7.x-2.3.tar.gz \
-  | tar --strip=1 -xzC sites/all/modules/contrib/libraries
+  && curl -Lks https://ftp.drupal.org/files/projects/libraries-${LIBRARIES_VERSION}.tar.gz \
+       -o /tmp/libraries-${LIBRARIES_VERSION}.tar.gz \
+  && echo "${LIBRARIES_MD5} /tmp/libraries-${LIBRARIES_VERSION}.tar.gz" | md5sum -c - \
+  && tar --strip=1 -xzf /tmp/libraries-${LIBRARIES_VERSION}.tar.gz -C sites/all/modules/contrib/libraries \
+  && rm /tmp/libraries-${LIBRARIES_VERSION}.tar.gz
 
 # Add awssdk2 library, needed for s3fs
+ENV AWSSDK_VERSION 2.7.25
 ENV AWSSDK_MD5 fe0596207f39affa2ba2ee83a7db1064
-RUN curl -Lks https://github.com/aws/aws-sdk-php/releases/download/2.7.25/aws.zip -o /tmp/aws.zip \
-  && echo "${AWSSDK_MD5} /tmp/aws.zip" | md5sum -c - \
-  && unzip /tmp/aws.zip -d sites/all/libraries/awssdk2/ \
-  && rm -f /tmp/aws.zip
+
+RUN curl -Lks https://github.com/aws/aws-sdk-php/releases/download/${AWSSDK_VERSION}/aws.zip \
+      -o /tmp/aws-${AWSSDK_VERSION}.zip \
+  && echo "${AWSSDK_MD5} /tmp/aws-${AWSSDK_VERSION}.zip" | md5sum -c - \
+  && unzip /tmp/aws-${AWSSDK_VERSION}.zip -d sites/all/libraries/awssdk2/ \
+  && rm -f /tmp/aws-${AWSSDK_VERSION}.zip
 
 # Add S3fs contrib module
+ENV S3FS_VERSION 7.x-2.5
+ENV S3FS_MD5 55d23eb36b6072bff83d932b4463e869
+
 RUN mkdir -p sites/all/modules/contrib/s3fs \
-  && curl -Lks https://ftp.drupal.org/files/projects/s3fs-7.x-2.5.tar.gz \
-  | tar --strip=1 -xzC sites/all/modules/contrib/s3fs
+  && curl -Lks https://ftp.drupal.org/files/projects/s3fs-${S3FS_VERSION}.tar.gz \
+       -o /tmp/s3fs-${S3FS_VERSION}.tar.gz \
+  && echo "${S3FS_MD5} /tmp/s3fs-${S3FS_VERSION}.tar.gz" | md5sum -c - \
+  && tar --strip=1 -xzf /tmp/s3fs-${S3FS_VERSION}.tar.gz -C sites/all/modules/contrib/s3fs \
+  && rm /tmp/s3fs-${S3FS_VERSION}.tar.gz
+
