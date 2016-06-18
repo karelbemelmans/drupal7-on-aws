@@ -1,4 +1,15 @@
 FROM drupal:7-apache
+MAINTAINER Karel Bemelmans <mail@karelbemelmans.com>
+
+# This is an example Drupal site setup, where all modules and themes have been
+# installed using this Dockerfile. After installing this site, you will need to
+# enable all the relevant modules and themes using the Drupal site itself, as
+# this Dockerfile does not interact with the database in any way.
+#
+# This Dockerfile might be used as a starting point to do your whole Drupal site
+# building in Docker: instead of installing modules via drush you add them to
+# this Dockerfile, including the MD5 checks, and commit only that file to your
+# git repository.
 
 # Add some extra packages we need in this file
 RUN apt-get update && apt-get install -y unzip \
