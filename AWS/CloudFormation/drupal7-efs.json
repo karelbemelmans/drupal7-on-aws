@@ -641,9 +641,11 @@
           "mount" : {
 
             "commands" : {
+
               "10_mkdir" : {
-                "command" : {"Fn::Join" : [ "", [ "mkdir -p /", { "Ref" : "MountPoint" }]]}
+                "command" : {"Fn::Join" : [ "", [ "mkdir -p /", { "Ref" : "MountPoint" } ]]}
               },
+
               "20_mount" : {
                 "command" : { "Fn::Join": [ "", [
                   "mount -t nfs4 $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).",
@@ -654,9 +656,18 @@
                   {"Ref" : "MountPoint" }
                 ] ] }
               },
-              "30_permissions" : {
-                "command" : {"Fn::Join" : [ "", [ "chown 33:33 /", { "Ref" : "MountPoint" }]]}
+
+              "30_mkdir_drupal" : {
+                "command" : {"Fn::Join" : [ "", [ "mkdir -p /", { "Ref" : "MountPoint" }, "/drupal-data" ]]}
+              },
+
+              "40_permissions" : {
+                "command" : {"Fn::Join" : [ "", [
+                  "chown ec2-user:ec2-user /", { "Ref" : "MountPoint" }, "\n",
+                  "chown -R 33:33 /", { "Ref" : "MountPoint" }, "/drupal-data\n"
+                ]]}
               }
+
             }
 
           },
@@ -767,7 +778,7 @@
                   "  ports:\n",
                   "    - \"80:80\"\n",
                   "  volumes:\n",
-                  "    - /", { "Ref" : "MountPoint" } , ":/var/www/html/sites/default/files"
+                  "    - /", { "Ref" : "MountPoint" } , "/drupal-data:/var/www/html/sites/default/files"
                 ]]},
                 "mode" : "000644",
                 "owner" : "root",
