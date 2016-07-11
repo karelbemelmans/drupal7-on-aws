@@ -1,0 +1,895 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Custom VPC and Multi-AZ stack for Drupal 7 with MySQL DB, memcached and EFS file storage. Check out the full CloudFormation stack at https://github.com/karelbemelmans/drupal7-on-aws/",
+
+  "Parameters": {
+
+    "KeyPairName": {
+      "Description": "The key pair name to connect to the instances",
+      "Type": "AWS::EC2::KeyPair::KeyName"
+    },
+
+    "WebServerInstanceType": {
+      "Description": "WebServer EC2 instance type",
+      "Type": "String",
+      "Default": "t2.small",
+      "AllowedValues": ["t2.micro", "t2.small"],
+      "ConstraintDescription": "must be a t2.micro or t2.small instance type"
+    },
+
+    "VpcCidrBlock": {
+      "Description": "VPC CIDR block",
+      "Type": "String",
+      "Default": "10.42.0.0/16"
+    },
+
+    "PublicSubnetOneCidr": {
+      "Description": "The CIDR ranges of the public subnets",
+      "Type": "String",
+      "Default": "10.42.0.0/18"
+    },
+
+    "PublicSubnetTwoCidr": {
+      "Description": "The CIDR ranges of the public subnets",
+      "Type": "String",
+      "Default": "10.42.64.0/18"
+    },
+
+    "PrivateSubnetOneCidr": {
+      "Description": "The CIDR ranges of the private subnets",
+      "Type": "String",
+      "Default": "10.42.128.0/18"
+    },
+
+    "PrivateSubnetTwoCidr": {
+      "Description": "The CIDR ranges of the private subnets",
+      "Type": "String",
+      "Default": "10.42.192.0/18"
+    },
+
+    "DbName": {
+      "Description": "The name of the database",
+      "Type": "String",
+      "MinLength": "4",
+      "MaxLength": "16",
+      "AllowedPattern" : "[a-zA-Z][a-zA-Z0-9]*",
+      "ConstraintDescription" : "must begin with a letter and contain only alphanumeric characters."
+    },
+
+    "DbMasterUsername": {
+      "Description": "The Master username for the Drupal DB",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "64",
+      "AllowedPattern" : "[a-zA-Z][a-zA-Z0-9]*",
+      "ConstraintDescription" : "must begin with a letter and contain only alphanumeric characters."
+    },
+
+    "DbMasterPassword": {
+      "Description": "The Master password for the Drupal DB",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "16",
+      "AllowedPattern" : "[a-zA-Z][a-zA-Z0-9]*",
+      "ConstraintDescription" : "must begin with a letter and contain only alphanumeric characters."
+    },
+
+    "WebServerCapacity": {
+      "Default": "2",
+      "Description" : "The initial number of WebServer instances",
+      "Type": "Number",
+      "MinValue": "0",
+      "MaxValue": "10",
+      "ConstraintDescription" : "must be between 0 and 10 EC2 instances."
+    },
+
+    "DBClass" : {
+      "Description" : "Database instance class",
+      "Type" : "String",
+      "Default" : "db.t2.small",
+      "AllowedValues" : [ "db.t1.micro", "db.m1.small", "db.m1.medium", "db.m1.large", "db.m1.xlarge", "db.m2.xlarge", "db.m2.2xlarge", "db.m2.4xlarge", "db.m3.medium", "db.m3.large", "db.m3.xlarge", "db.m3.2xlarge", "db.m4.large", "db.m4.xlarge", "db.m4.2xlarge", "db.m4.4xlarge", "db.m4.10xlarge", "db.r3.large", "db.r3.xlarge", "db.r3.2xlarge", "db.r3.4xlarge", "db.r3.8xlarge", "db.m2.xlarge", "db.m2.2xlarge", "db.m2.4xlarge", "db.cr1.8xlarge", "db.t2.micro", "db.t2.small", "db.t2.medium", "db.t2.large"]
+,
+      "ConstraintDescription" : "must select a valid database instance type."
+    },
+
+    "MultiAZDatabase": {
+      "Default": "false",
+      "Description" : "Create a Multi-AZ MySQL Amazon RDS database instance. This will take a while to create.",
+      "Type": "String",
+      "AllowedValues" : [ "true", "false" ],
+      "ConstraintDescription" : "must be either true or false."
+    },
+
+    "DBAllocatedStorage" : {
+      "Default": "5",
+      "Description" : "The size of the database (Gb)",
+      "Type": "Number",
+      "MinValue": "5",
+      "MaxValue": "1024",
+      "ConstraintDescription" : "must be between 5 and 1024Gb."
+    },
+
+    "MountPoint" : {
+      "Description" : "The Linux mount point for the EFS volume",
+      "Type": "String",
+      "MinLength": "1",
+      "Default": "drupalSharedFiles"
+    }
+
+  },
+
+  "Mappings": {
+    "AmazonMachineImages": {
+      "eu-west-1": {
+        "64": "ami-b0ac25c3",
+        "Description": "Amazon Linux AMI 2016.03.1 (HVM), SSD Volume Type, eu-west-1"
+      },
+      "us-east-1": {
+        "64": "ami-f5f41398",
+        "Description": "Amazon Linux AMI 2016.03.1 (HVM), SSD Volume Type, us-east-1"
+      },
+      "us-west-1": {
+        "64": "ami-6e84fa0e",
+        "Description": "Amazon Linux AMI 2016.03.1 (HVM), SSD Volume Type, us-west-1"
+      },
+      "us-west-2": {
+        "64": "ami-d0f506b0",
+        "Description": "Amazon Linux AMI 2016.03.1 (HVM), SSD Volume Type, us-west-2"
+      }
+    }
+  },
+
+  "Outputs" : {
+    "WebsiteURL" : {
+      "Description" : "URL for newly created Drupal stack",
+      "Value" : { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : [ "DrupalWebServerElasticLoadBalancer", "DNSName" ]}]] }
+    }
+  },
+
+  "Resources": {
+
+    "MountTargetSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "GroupDescription": "Security group for Drupal mount target",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "2049",
+            "ToPort": "2049",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+
+    "SharedFileSystem": {
+      "Type": "AWS::EFS::FileSystem",
+      "Properties": {
+        "FileSystemTags": [
+          {
+            "Key": "Name",
+            "Value": "Drupal Shared Filesystem"
+          }
+        ]
+      }
+    },
+
+    "MountTargetPrivateSubnetOne": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": { "Ref": "SharedFileSystem" },
+        "SubnetId": { "Ref": "PrivateSubnetOne" },
+        "SecurityGroups": [ { "Ref": "MountTargetSecurityGroup" } ]
+      }
+    },
+
+    "MountTargetPrivateSubnetTwo": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": { "Ref": "SharedFileSystem" },
+        "SubnetId": { "Ref": "PrivateSubnetTwo" },
+        "SecurityGroups": [ { "Ref": "MountTargetSecurityGroup" } ]
+      }
+    },
+
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "true",
+        "CidrBlock": { "Ref": "VpcCidrBlock" },
+        "Tags": [{
+          "Key": "Name",
+          "Value": "Drupal 7 VPC"
+        }]
+      }
+    },
+
+    "PublicSubnetOne": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "MapPublicIpOnLaunch": true,
+        "CidrBlock": { "Ref": "PublicSubnetOneCidr" },
+        "AvailabilityZone": {
+          "Fn::Select": [ "0", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ]
+        },
+        "Tags": [{
+          "Key": "Name",
+          "Value": "Public Subnet #1"
+        }]
+      }
+    },
+
+    "PublicSubnetTwo": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "MapPublicIpOnLaunch": true,
+        "CidrBlock": { "Ref": "PublicSubnetTwoCidr" },
+        "AvailabilityZone": {
+          "Fn::Select": [ "1", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ]
+        },
+        "Tags": [{
+          "Key": "Name",
+          "Value": "Public Subnet #2"
+        }]
+      }
+    },
+
+    "PrivateSubnetOne": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "MapPublicIpOnLaunch": false,
+        "CidrBlock": { "Ref": "PrivateSubnetOneCidr" },
+        "AvailabilityZone": {
+          "Fn::Select": [ "0", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ]
+        },
+        "Tags": [{
+          "Key": "Name",
+          "Value": "Private Subnet #1"
+        }]
+      }
+    },
+
+    "PrivateSubnetTwo": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "MapPublicIpOnLaunch": false,
+        "CidrBlock": { "Ref": "PrivateSubnetTwoCidr" },
+        "AvailabilityZone": {
+          "Fn::Select": [ "1", { "Fn::GetAZs": { "Ref": "AWS::Region" } } ]
+        },
+        "Tags": [{
+          "Key": "Name",
+          "Value": "Private Subnet #2"
+        }]
+      }
+    },
+
+    "PublicSubnetOneRouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": { "Ref": "PublicSubnetOne" },
+        "RouteTableId": { "Ref": "PublicRouteTable" }
+      }
+    },
+
+    "PublicSubnetTwoRouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": { "Ref": "PublicSubnetTwo" },
+        "RouteTableId": { "Ref": "PublicRouteTable" }
+      }
+    },
+
+    "PrivateSubnetOneRouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": { "Ref": "PrivateSubnetOne" },
+        "RouteTableId": { "Ref": "PrivateRouteTableOne" }
+      }
+    },
+
+    "PrivateSubnetTwoRouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": { "Ref": "PrivateSubnetTwo" },
+        "RouteTableId": { "Ref": "PrivateRouteTableTwo" }
+      }
+    },
+
+    "PrivateRouteToInternetOne": {
+      "DependsOn": [ "PrivateRouteTableOne", "NATGatewayOne" ],
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": { "Ref": "PrivateRouteTableOne" },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": { "Ref": "NATGatewayOne" }
+      }
+    },
+
+    "PrivateRouteToInternetTwo": {
+      "DependsOn": [ "PrivateRouteTableTwo", "NATGatewayTwo" ],
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": { "Ref": "PrivateRouteTableTwo" },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": { "Ref": "NATGatewayTwo" }
+      }
+    },
+
+    "PrivateRouteTableOne": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": { "VpcId": { "Ref": "VPC" } }
+    },
+
+    "PrivateRouteTableTwo": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": { "VpcId": { "Ref": "VPC" } }
+    },
+
+    "InternetGateway": {
+      "Type": "AWS::EC2::InternetGateway"
+    },
+
+    "VPCGatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "InternetGatewayId": { "Ref": "InternetGateway" }
+      }
+    },
+
+    "PublicRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": { "VpcId": { "Ref": "VPC" } }
+    },
+
+    "PublicRoute": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": { "Ref": "PublicRouteTable" },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": { "Ref": "InternetGateway" }
+      }
+    },
+
+    "NATGatewayOne": {
+      "DependsOn": "InternetGateway",
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "AllocationId": { "Fn::GetAtt": [ "ElasticIPOne", "AllocationId" ] },
+        "SubnetId": { "Ref" : "PublicSubnetOne" }
+      }
+    },
+
+    "ElasticIPOne": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": { "Domain": "vpc" }
+    },
+
+    "NATGatewayTwo": {
+      "DependsOn": "InternetGateway",
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "AllocationId": { "Fn::GetAtt": [ "ElasticIPTwo", "AllocationId"] },
+        "SubnetId": { "Ref" : "PublicSubnetTwo" }
+      }
+    },
+
+    "ElasticIPTwo": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": { "Domain": "vpc" }
+    },
+
+    "DrupalElasticacheSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Elasticache Security Group",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "11211",
+            "ToPort": "11211",
+            "CidrIp": {"Ref": "PrivateSubnetOneCidr"}
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "11211",
+            "ToPort": "11211",
+            "CidrIp": {"Ref": "PrivateSubnetTwoCidr"}
+          }
+        ],
+        "VpcId": { "Ref": "VPC" }
+      }
+    },
+
+    "DrupalElasticacheSubnetGroup" : {
+      "Type" : "AWS::ElastiCache::SubnetGroup",
+      "Properties" : {
+        "Description" : "Cache Subnet Group",
+        "SubnetIds" : [
+          { "Ref" : "PrivateSubnetOne" },
+          { "Ref" : "PrivateSubnetTwo" }
+        ]
+      }
+    },
+
+    "DrupalElasticacheCluster": {
+      "Type": "AWS::ElastiCache::CacheCluster",
+      "Properties": {
+        "CacheNodeType": "cache.t1.micro",
+        "AutoMinorVersionUpgrade": "true",
+        "AZMode" : "cross-az",
+        "Engine": "memcached",
+        "NumCacheNodes": "2",
+        "VpcSecurityGroupIds": [
+          { "Ref": "DrupalElasticacheSecurityGroup" }
+        ],
+        "CacheSubnetGroupName": {
+          "Ref": "DrupalElasticacheSubnetGroup"
+        },
+        "PreferredAvailabilityZones" : [
+          { "Fn::GetAtt" : [ "PrivateSubnetOne", "AvailabilityZone" ] },
+          { "Fn::GetAtt" : [ "PrivateSubnetTwo", "AvailabilityZone" ] }
+        ]
+      }
+    },
+
+    "Drupal7DBSubnetGroup" : {
+      "Type" : "AWS::RDS::DBSubnetGroup",
+      "Properties" : {
+        "DBSubnetGroupDescription" : "Subnets available for the Drupal 7 DB Instance",
+        "SubnetIds" : [
+          { "Ref": "PrivateSubnetOne" },
+          { "Ref": "PrivateSubnetTwo" }
+        ]
+      }
+    },
+
+    "Drupal7DbSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for the Drupal 7 DB ",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "TCP",
+            "FromPort": "3306",
+            "ToPort": "3306",
+            "CidrIp": { "Ref": "PrivateSubnetOneCidr" }
+          },
+          {
+            "IpProtocol": "TCP",
+            "FromPort": "3306",
+            "ToPort": "3306",
+            "CidrIp": { "Ref": "PrivateSubnetTwoCidr" }
+          }
+        ],
+        "VpcId": { "Ref": "VPC" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Security Group for Drupal 7 RDS instances"
+          }
+        ]
+      }
+    },
+
+    "DrupalDb" : {
+      "Type" : "AWS::RDS::DBInstance",
+      "Properties" : {
+        "AllocatedStorage" : { "Ref" : "DBAllocatedStorage" },
+        "VPCSecurityGroups" : [ { "Ref" : "Drupal7DbSecurityGroup"} ],
+        "DBInstanceClass" : { "Ref": "DBClass" },
+        "Engine": "MySQL",
+        "StorageType": "gp2",
+        "MultiAZ" : { "Ref": "MultiAZDatabase" },
+        "DBSubnetGroupName" : { "Ref" : "Drupal7DBSubnetGroup" },
+        "PreferredBackupWindow": "02:00-03:30",
+        "BackupRetentionPeriod": "7",
+        "PreferredMaintenanceWindow": "sun:04:00-sun:06:00",
+        "DBName": { "Ref": "DbName" },
+        "MasterUsername" : { "Ref": "DbMasterUsername" },
+        "MasterUserPassword" : { "Ref": "DbMasterPassword" },
+        "Tags": [
+          { "Key" : "Name", "Value" : "Drupal 7 Database" }
+        ]
+      },
+      "DeletionPolicy" : "Snapshot"
+    },
+
+    "DrupalELBPublicAccess": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for public HTTP access",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "VpcId": { "Ref": "VPC" }
+      }
+    },
+
+    "DrupalWebServerSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for the Drupal Web Server instances",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "CidrIp": { "Ref": "VpcCidrBlock"}
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": { "Ref": "VpcCidrBlock" }
+          }
+        ],
+        "VpcId": { "Ref": "VPC" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Drupal web server host security group"
+          },
+          {
+            "Key": "Service",
+            "Value": "Drupal"
+          }
+        ]
+      }
+    },
+
+    "DrupalWebServerAutoScalingGroup" : {
+      "Type" : "AWS::AutoScaling::AutoScalingGroup",
+      "DependsOn": [ "MountTargetPrivateSubnetOne", "MountTargetPrivateSubnetTwo", "InternetGateway" ],
+      "Properties" : {
+        "AvailabilityZones" : [
+          { "Fn::GetAtt" : [ "PrivateSubnetOne", "AvailabilityZone" ] },
+          { "Fn::GetAtt" : [ "PrivateSubnetTwo", "AvailabilityZone" ] }
+        ],
+        "LaunchConfigurationName" : { "Ref" : "LaunchConfigurationForDrupalWebServer" },
+        "MinSize" : "0",
+        "MaxSize" : "10",
+        "DesiredCapacity" : { "Ref" : "WebServerCapacity" },
+        "LoadBalancerNames" : [ { "Ref" : "DrupalWebServerElasticLoadBalancer" } ],
+        "VPCZoneIdentifier": [
+          { "Ref": "PrivateSubnetOne" },
+          { "Ref": "PrivateSubnetTwo" }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Drupal Web Server",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "Service",
+            "Value": "Drupal",
+            "PropagateAtLaunch": true
+          }
+        ]
+      },
+      "CreationPolicy" : {
+        "ResourceSignal" : {
+          "Timeout" : "PT5M",
+          "Count"   : { "Ref" : "WebServerCapacity" }
+        }
+      },
+      "UpdatePolicy": {
+        "AutoScalingRollingUpdate": {
+          "MinInstancesInService": "1",
+          "MaxBatchSize": "1",
+          "PauseTime" : "PT15M",
+          "WaitOnResourceSignals": "true"
+        }
+      }
+    },
+
+    "DrupalWebServerElasticLoadBalancer" : {
+      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties" : {
+        "Subnets": [
+          { "Ref": "PublicSubnetOne" },
+          { "Ref": "PublicSubnetTwo" }
+        ],
+        "CrossZone" : "true",
+        "LBCookieStickinessPolicy" : [ {
+          "PolicyName" : "CookieBasedPolicy",
+          "CookieExpirationPeriod" : "30"
+        } ],
+        "Listeners" : [ {
+          "LoadBalancerPort" : "80",
+          "InstancePort" : "80",
+          "Protocol" : "HTTP",
+          "PolicyNames" : [ "CookieBasedPolicy" ]
+        } ],
+        "HealthCheck" : {
+          "Target" : "HTTP:80/install.php",
+          "HealthyThreshold" : "2",
+          "UnhealthyThreshold" : "5",
+          "Interval" : "10",
+          "Timeout" : "5"
+        },
+        "SecurityGroups": [ { "Ref": "DrupalELBPublicAccess" } ]
+      }
+    },
+
+    "LaunchConfigurationForDrupalWebServer": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Metadata" : {
+        "Comment1" : "Configure the bootstrap helpers to install Docker and docker compose",
+        "Comment2" : "The website content is downloaded as a Docker container",
+
+        "AWS::CloudFormation::Init" : {
+          "configSets" : {
+              "drupal_install" : [ "install", "mount", "run" ]
+          },
+
+          "install" : {
+
+            "packages" : {
+              "yum" : {
+                "docker"       : []
+              }
+            },
+
+            "services" : {
+              "sysvinit" : {
+                "docker" : {
+                  "enabled" : "true",
+                  "ensureRunning" : "true",
+                  "packages" : { "yum" : ["docker"] }
+                }
+              }
+            },
+
+            "files" : {
+
+              "/tmp/settings.php": {
+                "content":  { "Fn::Join" : [ "", [
+                  "<?php\n\n",
+
+                  "// This is a very minimal settings.php file.\n",
+                  "$databases['default']['default'] = array(\n",
+                  "  'driver' => 'mysql',\n",
+                  "  'database' => 'drupal7',\n",
+                  "  'username' => '", { "Ref": "DbMasterUsername" }, "',\n",
+                  "  'password' => '", { "Ref": "DbMasterPassword" }, "',\n",
+                  "  'host' => '", { "Fn::Join": [":",[
+                        { "Fn::GetAtt" : [ "DrupalDb", "Endpoint.Address" ] },
+                        { "Fn::GetAtt" : [ "DrupalDb", "Endpoint.Port" ] }
+                      ] ] }, "',\n",
+                  "  'prefix' => ''\n",
+                  ");\n",
+
+                  "$conf['cache_backends'][] = 'sites/all/modules/contrib/memcache/memcache.inc';\n",
+                  "$conf['lock_inc'] = 'sites/all/modules/contrib/memcache/memcache-lock.inc';\n",
+                  "$conf['memcache_stampede_protection'] = TRUE;\n",
+                  "$conf['cache_default_class'] = 'MemCacheDrupal';\n",
+                  "// The 'cache_form' bin must be assigned no non-volatile storage.\n",
+                  "$conf['cache_class_cache_form'] = 'DrupalDatabaseCache';\n",
+
+                  "// Don't bootstrap the database when serving pages from the cache.\n",
+                  "$conf['page_cache_without_database'] = TRUE;\n",
+                  "$conf['page_cache_invoke_hooks'] = FALSE;\n",
+                  "$conf['memcache_servers'] = array('", { "Fn::Join": [":",[
+                        { "Fn::GetAtt" : [ "DrupalElasticacheCluster", "ConfigurationEndpoint.Address" ] },
+                        { "Fn::GetAtt" : [ "DrupalElasticacheCluster", "ConfigurationEndpoint.Port" ] }
+                      ] ] }, "' => 'default');\n"
+
+                ]]},
+                "mode" : "000644",
+                "owner" : "root",
+                "group" : "root"
+              },
+
+              "/tmp/Dockerfile": {
+                "content":  { "Fn::Join" : [ "", [
+
+                  "FROM drupal:7-apache\n",
+
+                  "# Add some extra packages we need in this file\n",
+                  "RUN apt-get update && apt-get install -y unzip && rm -rf /var/lib/apt/lists/* \n",
+
+                  "# Create the sites/default/files folder so Drupal can write caches to it\n",
+                  "RUN mkdir -p sites/default/files && chown www-data:www-data sites/default/files\n",
+
+                  "# Add pecl memcache module\n",
+                  "RUN apt-get update && apt-get install -y libmemcached-dev",
+                  "  && pecl install memcached",
+                  "  && docker-php-ext-enable memcached\n",
+
+                  "COPY settings.php sites/default/settings.php\n",
+
+                  "# Add memcached contrib module\n",
+                  "RUN mkdir -p sites/all/modules/contrib/memcache",
+                  "  && curl -Lks https://ftp.drupal.org/files/projects/memcache-7.x-1.5.tar.gz",
+                  "  | tar --strip=1 -xzC sites/all/modules/contrib/memcache\n",
+
+                  "# Add Libraries contrib module\n",
+                  "RUN mkdir -p sites/all/modules/contrib/libraries",
+                  "  && curl -Lks https://ftp.drupal.org/files/projects/libraries-7.x-2.3.tar.gz",
+                  "  | tar --strip=1 -xzC sites/all/modules/contrib/libraries\n",
+
+                  "# Add awssdk2 library, needed for s3fs\n",
+                  "ENV AWSSDK_MD5 fe0596207f39affa2ba2ee83a7db1064\n",
+                  "RUN curl -Lks https://github.com/aws/aws-sdk-php/releases/download/2.7.25/aws.zip -o /tmp/aws.zip",
+                  "  && echo \"${AWSSDK_MD5} /tmp/aws.zip\" | md5sum -c - ",
+                  "  && unzip /tmp/aws.zip -d sites/all/libraries/awssdk2/",
+                  "  && rm -f /tmp/aws.zip\n",
+
+                  "# Add S3fs contrib module\n",
+                  "RUN mkdir -p sites/all/modules/contrib/s3fs",
+                  "  && curl -Lks https://ftp.drupal.org/files/projects/s3fs-7.x-2.5.tar.gz",
+                  "  | tar --strip=1 -xzC sites/all/modules/contrib/s3fs\n",
+
+                  "VOLUME sites/default/files\n"
+
+                ]]},
+                "mode" : "000644",
+                "owner" : "root",
+                "group" : "root"
+              },
+
+              "/tmp/docker-compose.yml": {
+                "content":  { "Fn::Join" : [ "", [
+                  "drupal:\n",
+                  "  build: .\n",
+                  "  ports:\n",
+                  "    - \"80:80\"\n",
+                  "  volumes:\n",
+                  "    - /", { "Ref" : "MountPoint" } , ":/var/www/sites/default/files"
+                ]]},
+                "mode" : "000644",
+                "owner" : "root",
+                "group" : "root"
+              },
+
+              "/tmp/install-docker-compose.sh": {
+                "content": { "Fn::Join" : [ "", [
+                  "#!/bin/bash\n",
+                  "curl -L https://github.com/docker/compose/releases/download/1.7.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose\n",
+                  "chmod +x /usr/local/bin/docker-compose\n"
+                ]]},
+                "mode" : "000755",
+                "owner" : "root",
+                "group" : "root"
+              }
+
+            },
+
+            "commands" : {
+              "10_install_docker_compose": {
+                "command" : "/tmp/install-docker-compose.sh",
+                "cwd" : "/tmp"
+              }
+            }
+          },
+
+          "mount" : {
+
+            "commands" : {
+              "10_mkdir" : {
+                "command" : {"Fn::Join" : [ "", [ "mkdir -p /", { "Ref" : "MountPoint" }]]}
+              },
+              "20_mount" : {
+                "command" : { "Fn::Join": [ "", [
+                  "mount -t nfs4 $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).",
+                  { "Ref": "SharedFileSystem" },
+                  ".efs.",
+                  { "Ref": "AWS::Region" },
+                  ".amazonaws.com:/ /",
+                  {"Ref" : "MountPoint" }
+                ] ] }
+              },
+              "30_permissions" : {
+                "command" : {"Fn::Join" : [ "", [ "chown ec2-user:ec2-user /", { "Ref" : "MountPoint" }]]}
+              }
+            }
+
+          },
+
+          "run" : {
+
+            "files" : {
+
+              "/tmp/start-drupal-container.sh" : {
+                "content" : { "Fn::Join" : [ "", [
+                  "#!/bin/bash\n",
+                  "/usr/local/bin/docker-compose build\n",
+                  "/usr/local/bin/docker-compose up -d\n"
+                ]]},
+                "mode" : "000500",
+                "owner" : "root",
+                "group" : "root"
+              },
+
+              "/etc/cfn/cfn-hup.conf" : {
+                "content" : { "Fn::Join" : ["", [
+                  "[main]\n",
+                  "stack=", { "Ref" : "AWS::StackId" }, "\n",
+                  "region=", { "Ref" : "AWS::Region" }, "\n"
+                ]]},
+                "mode"    : "000400",
+                "owner"   : "root",
+                "group"   : "root"
+              },
+
+              "/etc/cfn/hooks.d/cfn-auto-reloader.conf" : {
+                "content": { "Fn::Join" : ["", [
+                  "[cfn-auto-reloader-hook]\n",
+                  "triggers=post.update\n",
+                  "path=Resources.LaunchConfigurationForDrupalWebServer.Metadata.AWS::CloudFormation::Init\n",
+                  "action=/opt/aws/bin/cfn-init -v ",
+                  "         --stack ", { "Ref" : "AWS::StackName" },
+                  "         --resource LaunchConfigurationForDrupalWebServer ",
+                  "         --region ", { "Ref" : "AWS::Region" }, "\n",
+                  "runas=root\n"
+                ]]}
+              }
+
+            },
+
+            "services" : {
+              "sysvinit" : {
+                "cfn-hup" : { "enabled" : "true", "ensureRunning" : "true",
+                              "files" : ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"]}
+              }
+            },
+
+            "commands" : {
+              "10_start_drupal_container" : {
+                "command" : "/tmp/start-drupal-container.sh",
+                "cwd" : "/tmp"
+              }
+            }
+          }
+
+        }
+      },
+      "Properties": {
+        "ImageId": {
+          "Fn::FindInMap" : [ "AmazonMachineImages", { "Ref" : "AWS::Region" }, "64"]
+        },
+        "InstanceMonitoring": false,
+        "InstanceType": { "Ref": "WebServerInstanceType" },
+        "KeyName": { "Ref": "KeyPairName" },
+        "SecurityGroups": [
+          { "Ref": "DrupalWebServerSecurityGroup" }
+        ],
+        "BlockDeviceMappings" : [ {
+           "DeviceName" : "/dev/xvda",
+           "Ebs" : { "VolumeSize" : "30", "DeleteOnTermination" : "true"}
+        } ],
+
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+                       "#!/bin/bash -xe\n",
+                       "yum update -y aws-cfn-bootstrap\n",
+
+                       "/opt/aws/bin/cfn-init -v ",
+                       "         --stack ", { "Ref" : "AWS::StackName" },
+                       "         --resource LaunchConfigurationForDrupalWebServer ",
+                       "         --configsets drupal_install ",
+                       "         --region ", { "Ref" : "AWS::Region" }, "\n",
+
+                       "/opt/aws/bin/cfn-signal -e $? ",
+                       "         --stack ", { "Ref" : "AWS::StackName" },
+                       "         --resource DrupalWebServerAutoScalingGroup ",
+                       "         --region ", { "Ref" : "AWS::Region" }, "\n"
+        ]]}}
+      }
+    }
+  }
+}
