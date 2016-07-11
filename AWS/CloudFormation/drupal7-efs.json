@@ -723,18 +723,6 @@
                   "  && curl -Lks https://ftp.drupal.org/files/projects/libraries-7.x-2.3.tar.gz",
                   "  | tar --strip=1 -xzC sites/all/modules/contrib/libraries\n",
 
-                  "# Add awssdk2 library, needed for s3fs\n",
-                  "ENV AWSSDK_MD5 fe0596207f39affa2ba2ee83a7db1064\n",
-                  "RUN curl -Lks https://github.com/aws/aws-sdk-php/releases/download/2.7.25/aws.zip -o /tmp/aws.zip",
-                  "  && echo \"${AWSSDK_MD5} /tmp/aws.zip\" | md5sum -c - ",
-                  "  && unzip /tmp/aws.zip -d sites/all/libraries/awssdk2/",
-                  "  && rm -f /tmp/aws.zip\n",
-
-                  "# Add S3fs contrib module\n",
-                  "RUN mkdir -p sites/all/modules/contrib/s3fs",
-                  "  && curl -Lks https://ftp.drupal.org/files/projects/s3fs-7.x-2.5.tar.gz",
-                  "  | tar --strip=1 -xzC sites/all/modules/contrib/s3fs\n",
-
                   "VOLUME sites/default/files\n"
 
                 ]]},
