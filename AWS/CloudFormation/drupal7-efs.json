@@ -655,7 +655,7 @@
                 ] ] }
               },
               "30_permissions" : {
-                "command" : {"Fn::Join" : [ "", [ "chown ec2-user:ec2-user /", { "Ref" : "MountPoint" }]]}
+                "command" : {"Fn::Join" : [ "", [ "chown 33:33 /", { "Ref" : "MountPoint" }]]}
               }
             }
 
