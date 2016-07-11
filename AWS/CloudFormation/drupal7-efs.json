@@ -767,7 +767,7 @@
                   "  ports:\n",
                   "    - \"80:80\"\n",
                   "  volumes:\n",
-                  "    - /", { "Ref" : "MountPoint" } , ":/var/www/sites/default/files"
+                  "    - /", { "Ref" : "MountPoint" } , ":/var/www/html/sites/default/files"
                 ]]},
                 "mode" : "000644",
                 "owner" : "root",
