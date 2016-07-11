@@ -634,7 +634,31 @@
 
         "AWS::CloudFormation::Init" : {
           "configSets" : {
-              "drupal_install" : [ "install", "mount", "run" ]
+              "drupal_install" : [ "mount", "install", "run" ],
+              "drupal_reload"  : [ "install", "run" ]
+          },
+
+          "mount" : {
+
+            "commands" : {
+              "10_mkdir" : {
+                "command" : {"Fn::Join" : [ "", [ "mkdir -p /", { "Ref" : "MountPoint" }]]}
+              },
+              "20_mount" : {
+                "command" : { "Fn::Join": [ "", [
+                  "mount -t nfs4 $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).",
+                  { "Ref": "SharedFileSystem" },
+                  ".efs.",
+                  { "Ref": "AWS::Region" },
+                  ".amazonaws.com:/ /",
+                  {"Ref" : "MountPoint" }
+                ] ] }
+              },
+              "30_permissions" : {
+                "command" : {"Fn::Join" : [ "", [ "chown ec2-user:ec2-user /", { "Ref" : "MountPoint" }]]}
+              }
+            }
+
           },
 
           "install" : {
@@ -771,43 +795,9 @@
             }
           },
 
-          "mount" : {
-
-            "commands" : {
-              "10_mkdir" : {
-                "command" : {"Fn::Join" : [ "", [ "mkdir -p /", { "Ref" : "MountPoint" }]]}
-              },
-              "20_mount" : {
-                "command" : { "Fn::Join": [ "", [
-                  "mount -t nfs4 $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).",
-                  { "Ref": "SharedFileSystem" },
-                  ".efs.",
-                  { "Ref": "AWS::Region" },
-                  ".amazonaws.com:/ /",
-                  {"Ref" : "MountPoint" }
-                ] ] }
-              },
-              "30_permissions" : {
-                "command" : {"Fn::Join" : [ "", [ "chown ec2-user:ec2-user /", { "Ref" : "MountPoint" }]]}
-              }
-            }
-
-          },
-
           "run" : {
 
             "files" : {
-
-              "/tmp/start-drupal-container.sh" : {
-                "content" : { "Fn::Join" : [ "", [
-                  "#!/bin/bash\n",
-                  "/usr/local/bin/docker-compose build\n",
-                  "/usr/local/bin/docker-compose up -d\n"
-                ]]},
-                "mode" : "000500",
-                "owner" : "root",
-                "group" : "root"
-              },
 
               "/etc/cfn/cfn-hup.conf" : {
                 "content" : { "Fn::Join" : ["", [
@@ -828,6 +818,7 @@
                   "action=/opt/aws/bin/cfn-init -v ",
                   "         --stack ", { "Ref" : "AWS::StackName" },
                   "         --resource LaunchConfigurationForDrupalWebServer ",
+                  "         --configsets reload_drupal ",
                   "         --region ", { "Ref" : "AWS::Region" }, "\n",
                   "runas=root\n"
                 ]]}
@@ -843,8 +834,12 @@
             },
 
             "commands" : {
-              "10_start_drupal_container" : {
-                "command" : "/tmp/start-drupal-container.sh",
+              "10_compose_build" : {
+                "command" : "/usr/local/bin/docker-compose build",
+                "cwd" : "/tmp"
+              },
+              "20_compose_up" : {
+                "command" : "/usr/local/bin/docker-compose up -d",
                 "cwd" : "/tmp"
               }
             }
