@@ -723,6 +723,11 @@
                   "  && curl -Lks https://ftp.drupal.org/files/projects/libraries-7.x-2.3.tar.gz",
                   "  | tar --strip=1 -xzC sites/all/modules/contrib/libraries\n",
 
+                  "# Add devel contrib module\n",
+                  "RUN mkdir -p sites/all/modules/contrib/devel",
+                  "  && curl -Lks https://ftp.drupal.org/files/projects/devel-7.x-1.5.tar.gz",
+                  "  | tar --strip=1 -xzC sites/all/modules/contrib/devel\n",
+
                   "VOLUME sites/default/files\n"
 
                 ]]},
