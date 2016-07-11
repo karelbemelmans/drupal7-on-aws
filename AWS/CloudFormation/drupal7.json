@@ -505,7 +505,6 @@
         "PreferredBackupWindow": "02:00-03:30",
         "BackupRetentionPeriod": "7",
         "PreferredMaintenanceWindow": "sun:04:00-sun:06:00",
-        "DBName": "drupal7",
         "MasterUsername" : { "Ref": "DbMasterUsername" },
         "MasterUserPassword" : { "Ref": "DbMasterPassword" },
         "Tags": [
