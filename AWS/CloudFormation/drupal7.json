@@ -501,7 +501,6 @@
         "StorageType": "gp2",
         "MultiAZ" : { "Ref": "MultiAZDatabase" },
         "DBSubnetGroupName" : { "Ref" : "Drupal7DBSubnetGroup" },
-        "DBInstanceIdentifier": "drupal7-db",
         "PreferredBackupWindow": "02:00-03:30",
         "BackupRetentionPeriod": "7",
         "PreferredMaintenanceWindow": "sun:04:00-sun:06:00",
