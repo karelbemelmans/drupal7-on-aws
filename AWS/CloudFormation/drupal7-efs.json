@@ -699,7 +699,7 @@
                   "// This is a very minimal settings.php file.\n",
                   "$databases['default']['default'] = array(\n",
                   "  'driver' => 'mysql',\n",
-                  "  'database' => 'drupal7',\n",
+                  "  'database' => '", { "Ref": "DbName" }, "',\n",
                   "  'username' => '", { "Ref": "DbMasterUsername" }, "',\n",
                   "  'password' => '", { "Ref": "DbMasterPassword" }, "',\n",
                   "  'host' => '", { "Fn::Join": [":",[
