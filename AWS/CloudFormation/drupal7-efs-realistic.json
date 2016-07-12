@@ -117,7 +117,7 @@
     },
 
     "DockerImage": {
-      "Description": "Name of the Docker hub image to pull for running on the EC2 instances",
+      "Description": "Name of the Docker image that contains the Drupal 7 website.",
       "Type": "String",
       "Default": "karelbemelmans/d7-docker-v1"
     },
