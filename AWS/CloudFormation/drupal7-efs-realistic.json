@@ -617,7 +617,7 @@
         ],
         "CrossZone" : "true",
         "LBCookieStickinessPolicy" : [ {
-          "PolicyName" : "CookieBasedPolicy",
+          "PolicyName" : "CookieBasedPolicy"
         } ],
         "Listeners" : [ {
           "LoadBalancerPort" : "80",
