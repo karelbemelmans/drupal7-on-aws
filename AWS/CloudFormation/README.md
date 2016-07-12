@@ -10,7 +10,11 @@ The file drupal7.json contains the full CloudFormation stack that creates the Mu
 
 The file drupal7-efs.json contains the full CloudFormation stack that creates the Multi-AZ Drupal setup, using AWS Elastic Filesystem.
 
+### EFS stack, realistic Drupal example
 
+The file drupal7-efs-realistic.json contains the full CloudFormation stack that creates the Multi-AZ Drupal setup, using AWS Elastic Filesystem with an actual realistic Drupal example site.
+
+The Docker image user in this stack is hosted on Docker hub: https://hub.docker.com/r/karelbemelmans/d7-docker-v1/
 
 
 
