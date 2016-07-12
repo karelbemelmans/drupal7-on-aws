@@ -618,7 +618,6 @@
         "CrossZone" : "true",
         "LBCookieStickinessPolicy" : [ {
           "PolicyName" : "CookieBasedPolicy",
-          "CookieExpirationPeriod" : "30"
         } ],
         "Listeners" : [ {
           "LoadBalancerPort" : "80",
