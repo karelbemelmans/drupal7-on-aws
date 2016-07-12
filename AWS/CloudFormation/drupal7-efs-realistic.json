@@ -669,10 +669,11 @@
               },
 
               "30_mkdir_drupal" : {
-                "command" : {"Fn::Join" : [ "", [
-                  "mkdir -p /", { "Ref" : "MountPoint" }, "/drupal-data",
-                  "mkdir -p /", { "Ref" : "MountPoint" }, "/drupal-private"
-                ]]}
+                "command" : {"Fn::Join" : [ "", [ "mkdir -p /", { "Ref" : "MountPoint" }, "/drupal-data" ]]}
+              },
+
+              "31_mkdir_drupal" : {
+                "command" : {"Fn::Join" : [ "", [ "mkdir -p /", { "Ref" : "MountPoint" }, "/drupal-private" ]]}
               },
 
               "40_permissions" : {
