@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Custom VPC and Multi-AZ stack for Drupal 7 with MySQL DB, memcached and EFS file storage. This stack uses a realistic example Drupal site, hosted on Github and Docker hub. For more information see https://github.com/karelbemelmans/drupal7-on-aws/tree/master/AWS/CloudFormation",
+  "Description": "Custom VPC and Multi-AZ stack for Drupal 7 with MySQL DB, memcached and EFS file storage. This stack uses a realistic example Drupal site, hosted on Github and Docker hub. For more information see https://github.com/karelbemelmans/drupal7-on-aws/",
 
   "Parameters": {
 
