@@ -125,6 +125,11 @@
     "SyslogDestination": {
       "Description": "Syslog destionation. Synthax: tcp://host:port",
       "Type": "String"
+    },
+
+    "SslCertificateId": {
+      "Description": "The SSL certificate id (arn) for HTTPS on the ELB",
+      "Type": "String"
     }
 
   },
@@ -524,6 +529,12 @@
             "FromPort": "80",
             "ToPort": "80",
             "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "443",
+            "ToPort": "443",
+            "CidrIp": "0.0.0.0/0"
           }
         ],
         "VpcId": { "Ref": "VPC" }
@@ -619,12 +630,23 @@
         "LBCookieStickinessPolicy" : [ {
           "PolicyName" : "CookieBasedPolicy"
         } ],
-        "Listeners" : [ {
-          "LoadBalancerPort" : "80",
-          "InstancePort" : "80",
-          "Protocol" : "HTTP",
-          "PolicyNames" : [ "CookieBasedPolicy" ]
-        } ],
+        "Listeners" : [
+          {
+            "LoadBalancerPort" : "80",
+            "InstancePort" : "80",
+            "Protocol" : "HTTP",
+            "PolicyNames" : [ "CookieBasedPolicy" ]
+          },
+          {
+            "LoadBalancerPort": "443",
+            "InstancePort": "80",
+            "Protocol": "HTTPS",
+            "PolicyNames" : [ "CookieBasedPolicy" ],
+            "SSLCertificateId": {
+              "Ref": "SslCertificateId"
+            }
+          }
+        ],
         "HealthCheck" : {
           "Target" : "HTTP:80/install.php",
           "HealthyThreshold" : "2",
