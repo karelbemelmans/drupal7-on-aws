@@ -123,7 +123,12 @@
     },
 
     "SyslogDestination": {
-      "Description": "Syslog destionation. Synthax: tcp://host:port",
+      "Description": "Syslog destionation for generic Docker logs. Synthax: tcp://host:port",
+      "Type": "String"
+    },
+
+    "WatchdogSyslogDestination": {
+      "Description": "Syslog destionation for Drupal watchdog logs. Synthax: host:port",
       "Type": "String"
     }
 
@@ -644,8 +649,8 @@
 
         "AWS::CloudFormation::Init" : {
           "configSets" : {
-              "drupal_install" : [ "mount", "install", "run" ],
-              "drupal_reload"  : [ "install", "run" ]
+              "drupal_install" : [ "mount", "prepare", "run" ],
+              "drupal_reload"  : [ "prepare", "run" ]
           },
 
           "mount" : {
@@ -687,21 +692,31 @@
 
           },
 
-          "install" : {
+          "prepare" : {
 
             "packages" : {
               "yum" : {
-                "docker"       : []
+                "docker"         : [],
+                "rsyslog-gnutls" : []
               }
             },
 
             "services" : {
               "sysvinit" : {
+
                 "docker" : {
                   "enabled" : "true",
                   "ensureRunning" : "true",
                   "packages" : { "yum" : ["docker"] }
+                },
+
+                "rsyslog" : {
+                  "enabled" : "true",
+                  "ensureRunning" : "true",
+                  "packages" : { "yum" : ["rsyslog-gnutls"] },
+                  "files": [ "/etc/rsyslog.d/99-drupal.conf" ]
                 }
+
               }
             },
 
@@ -716,6 +731,44 @@
                 "mode" : "000755",
                 "owner" : "root",
                 "group" : "root"
+              },
+
+              "/etc/papertrail-bundle.pem": {
+                "source": "https://papertrailapp.com/tools/papertrail-bundle.pem",
+                "mode" : "000644",
+                "owner" : "root",
+                "group" : "root"
+              },
+
+              "/etc/rsyslog.d/99-drupal.conf": {
+                "content": { "Fn::Join" : [ "", [
+
+                  "# TLS\n",
+                  "$DefaultNetstreamDriverCAFile /etc/papertrail-bundle.pem # trust these CAs\n",
+                  "$ActionSendStreamDriver gtls\n",
+                  "$ActionSendStreamDriverMode 1\n",
+                  "$ActionSendStreamDriverAuthMode x509/name\n",
+                  "$ActionSendStreamDriverPermittedPeer *.papertrailapp.com\n",
+
+                  "# Tweak queue options for connection failure\n",
+                  "# @url http://help.papertrailapp.com/kb/configuration/advanced-unix-logging-tips/#rsyslog_queue\n",
+                  "$ActionResumeInterval 10\n",
+                  "$ActionQueueSize 100000\n",
+                  "$ActionQueueDiscardMark 97500\n",
+                  "$ActionQueueHighWaterMark 80000\n",
+                  "$ActionQueueType LinkedList\n",
+                  "$ActionQueueFileName papertrailqueue\n",
+                  "$ActionQueueCheckpointInterval 100\n",
+                  "$ActionQueueMaxDiskSpace 2g\n",
+                  "$ActionResumeRetryCount -1\n",
+                  "$ActionQueueSaveOnShutdown on\n",
+                  "$ActionQueueTimeoutEnqueue 2\n",
+                  "$ActionQueueDiscardSeverity 0\n",
+
+                  "# Routing\n",
+                  "LOCAL0.* @@", { "Ref": "WatchdogSyslogDestination" } ,"\n"
+
+                ]]}
               }
 
             },
@@ -731,6 +784,11 @@
           },
 
           "run" : {
+
+            "packages" : {
+              "yum" : {
+              }
+            },
 
             "files" : {
 
