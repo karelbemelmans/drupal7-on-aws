@@ -754,7 +754,6 @@
                   "      driver: syslog\n",
                   "      options:\n",
                   "        syslog-address: \"", { "Ref": "SyslogDestination" } ,"\"\n",
-                  "        tag: drupal7\n",
                   "    volumes:\n",
                   "      - /", { "Ref" : "MountPoint" } , "/drupal-data:/var/www/html/sites/default/files\n",
                   "      - /", { "Ref" : "MountPoint" } , "/drupal-private:/data/private\n"
