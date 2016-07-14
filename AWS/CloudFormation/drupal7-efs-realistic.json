@@ -766,6 +766,7 @@
                   "      DRUPAL_DB_PASS: ", { "Ref": "DbMasterPassword" } ,"\n",
                   "      DRUPAL_DB_HOST: ", { "Fn::GetAtt" : [ "DrupalDb", "Endpoint.Address" ] } ,"\n",
                   "      DRUPAL_REDIS_HOST: ", { "Fn::GetAtt" : [ "DrupalElasticacheCluster", "RedisEndpoint.Address" ] },"\n",
+                  "      DRUPAL_REDIS_POST: ", { "Fn::GetAtt" : [ "DrupalElasticacheCluster", "RedisEndpoint.Port" ] },"\n",
                   "    logging:\n",
                   "      driver: syslog\n",
                   "      options:\n",
