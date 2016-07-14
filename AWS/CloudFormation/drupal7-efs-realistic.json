@@ -443,7 +443,7 @@
         "AutoMinorVersionUpgrade": "true",
         "AZMode" : "cross-az",
         "Engine": "redis",
-        "NumCacheNodes": "2",
+        "NumCacheNodes": "1",
         "VpcSecurityGroupIds": [
           { "Ref": "DrupalElasticacheSecurityGroup" }
         ],
