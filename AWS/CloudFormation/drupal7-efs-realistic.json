@@ -410,14 +410,14 @@
         "SecurityGroupIngress": [
           {
             "IpProtocol": "tcp",
-            "FromPort": "11211",
-            "ToPort": "11211",
+            "FromPort": "6379",
+            "ToPort": "6379",
             "CidrIp": {"Ref": "PrivateSubnetOneCidr"}
           },
           {
             "IpProtocol": "tcp",
-            "FromPort": "11211",
-            "ToPort": "11211",
+            "FromPort": "6379",
+            "ToPort": "6379",
             "CidrIp": {"Ref": "PrivateSubnetTwoCidr"}
           }
         ],
@@ -441,7 +441,6 @@
       "Properties": {
         "CacheNodeType": "cache.t1.micro",
         "AutoMinorVersionUpgrade": "true",
-        "AZMode" : "cross-az",
         "Engine": "redis",
         "NumCacheNodes": "1",
         "VpcSecurityGroupIds": [
@@ -449,11 +448,7 @@
         ],
         "CacheSubnetGroupName": {
           "Ref": "DrupalElasticacheSubnetGroup"
-        },
-        "PreferredAvailabilityZones" : [
-          { "Fn::GetAtt" : [ "PrivateSubnetOne", "AvailabilityZone" ] },
-          { "Fn::GetAtt" : [ "PrivateSubnetTwo", "AvailabilityZone" ] }
-        ]
+        }
       }
     },
 
@@ -770,7 +765,7 @@
                   "      DRUPAL_DB_USER: ", { "Ref": "DbMasterUsername" } ,"\n",
                   "      DRUPAL_DB_PASS: ", { "Ref": "DbMasterPassword" } ,"\n",
                   "      DRUPAL_DB_HOST: ", { "Fn::GetAtt" : [ "DrupalDb", "Endpoint.Address" ] } ,"\n",
-                  "      DRUPAL_REDIS_HOST: ", { "Fn::GetAtt" : [ "DrupalElasticacheCluster", "ConfigurationEndpoint.Address" ] },"\n",
+                  "      DRUPAL_REDIS_HOST: ", { "Fn::GetAtt" : [ "DrupalElasticacheCluster", "RedisEndpoint.Address" ] },"\n",
                   "    logging:\n",
                   "      driver: syslog\n",
                   "      options:\n",
