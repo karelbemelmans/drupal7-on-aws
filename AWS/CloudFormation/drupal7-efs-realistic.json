@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Custom VPC and Multi-AZ stack for Drupal 7 with MySQL DB, memcached and EFS file storage. This stack uses a realistic example Drupal site, hosted on Github and Docker hub. For more information see https://github.com/karelbemelmans/drupal7-on-aws/",
+  "Description": "Custom VPC and Multi-AZ stack for Drupal 7 with MySQL DB, redis and EFS file storage. This stack uses a realistic example Drupal site, hosted on Github and Docker hub. For more information see https://github.com/karelbemelmans/drupal7-on-aws/",
 
   "Parameters": {
 
@@ -442,7 +442,7 @@
         "CacheNodeType": "cache.t1.micro",
         "AutoMinorVersionUpgrade": "true",
         "AZMode" : "cross-az",
-        "Engine": "memcached",
+        "Engine": "redis",
         "NumCacheNodes": "2",
         "VpcSecurityGroupIds": [
           { "Ref": "DrupalElasticacheSecurityGroup" }
@@ -770,8 +770,7 @@
                   "      DRUPAL_DB_USER: ", { "Ref": "DbMasterUsername" } ,"\n",
                   "      DRUPAL_DB_PASS: ", { "Ref": "DbMasterPassword" } ,"\n",
                   "      DRUPAL_DB_HOST: ", { "Fn::GetAtt" : [ "DrupalDb", "Endpoint.Address" ] } ,"\n",
-                  "      DRUPAL_MEMCACHE_HOST: ", { "Fn::GetAtt" : [ "DrupalElasticacheCluster", "ConfigurationEndpoint.Address" ] },"\n",
-                  "      DRUPAL_MEMCACHE_PORT: ", { "Fn::GetAtt" : [ "DrupalElasticacheCluster", "ConfigurationEndpoint.Port" ] } ,"\n",
+                  "      DRUPAL_REDIS_HOST: ", { "Fn::GetAtt" : [ "DrupalElasticacheCluster", "ConfigurationEndpoint.Address" ] },"\n",
                   "    logging:\n",
                   "      driver: syslog\n",
                   "      options:\n",
