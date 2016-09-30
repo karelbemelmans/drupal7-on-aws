@@ -16,7 +16,7 @@
 FAILED=0
 REGION=eu-west-1
 
-templates=( $(find . -type f -name "*.json") )
+templates=( $(find . -type f -name "*.json") $(find . -type f -name "*.yml"))
 
 for template in "${templates[@]}"
 do
