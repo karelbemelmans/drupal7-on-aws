@@ -1,12 +1,14 @@
 ---
-
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Custom VPC and Multi-AZ stack for Drupal 7 with MySQL DB, redis and EFS
   file storage. This stack uses a realistic example Drupal site, hosted on Github
   and Docker hub. For more information see https://github.com/karelbemelmans/drupal7-on-aws/
 
-Parameters:
+################################################################################
+# Parameters
+################################################################################
 
+Parameters:
   KeyPairName:
     Description: The key pair name to connect to the instances
     Type: AWS::EC2::KeyPair::KeyName
@@ -151,6 +153,12 @@ Parameters:
     Description: The SSL certificate id (arn) for HTTPS on the ELB
     Type: String
 
+
+
+################################################################################
+# Mappings
+################################################################################
+
 Mappings:
   AmazonMachineImages:
     eu-west-1:
@@ -166,12 +174,24 @@ Mappings:
       '64': ami-d0f506b0
       Description: Amazon Linux AMI 2016.03.1 (HVM), SSD Volume Type, us-west-2
 
+
+
+################################################################################
+# Outputs
+################################################################################
+
 Outputs:
   WebsiteURL:
     Description: URL for newly created Drupal stack
     Value: !Sub
       - "http://{ADDRESS}"
       - ADDRESS: !GetAtt DrupalWebServerElasticLoadBalancer.DNSName
+
+
+
+################################################################################
+# Here come the resources!
+################################################################################
 
 Resources:
   MountTargetSecurityGroup:
@@ -185,12 +205,14 @@ Resources:
         FromPort: '2049'
         ToPort: '2049'
         CidrIp: 0.0.0.0/0
+
   SharedFileSystem:
     Type: AWS::EFS::FileSystem
     Properties:
       FileSystemTags:
       - Key: Name
         Value: Drupal Shared Filesystem
+
   MountTargetPrivateSubnetOne:
     Type: AWS::EFS::MountTarget
     Properties:
@@ -200,6 +222,7 @@ Resources:
         Ref: PrivateSubnetOne
       SecurityGroups:
       - Ref: MountTargetSecurityGroup
+
   MountTargetPrivateSubnetTwo:
     Type: AWS::EFS::MountTarget
     Properties:
@@ -209,6 +232,7 @@ Resources:
         Ref: PrivateSubnetTwo
       SecurityGroups:
       - Ref: MountTargetSecurityGroup
+
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -219,6 +243,7 @@ Resources:
       Tags:
       - Key: Name
         Value: Drupal 7 VPC
+
   PublicSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
@@ -235,6 +260,7 @@ Resources:
       Tags:
       - Key: Name
         Value: 'Public Subnet #1'
+
   PublicSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
@@ -251,6 +277,7 @@ Resources:
       Tags:
       - Key: Name
         Value: 'Public Subnet #2'
+
   PrivateSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
@@ -267,6 +294,7 @@ Resources:
       Tags:
       - Key: Name
         Value: 'Private Subnet #1'
+
   PrivateSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
@@ -283,6 +311,7 @@ Resources:
       Tags:
       - Key: Name
         Value: 'Private Subnet #2'
+
   PublicSubnetOneRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -290,6 +319,7 @@ Resources:
         Ref: PublicSubnetOne
       RouteTableId:
         Ref: PublicRouteTable
+
   PublicSubnetTwoRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -297,6 +327,7 @@ Resources:
         Ref: PublicSubnetTwo
       RouteTableId:
         Ref: PublicRouteTable
+
   PrivateSubnetOneRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -304,6 +335,7 @@ Resources:
         Ref: PrivateSubnetOne
       RouteTableId:
         Ref: PrivateRouteTableOne
+
   PrivateSubnetTwoRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -311,6 +343,7 @@ Resources:
         Ref: PrivateSubnetTwo
       RouteTableId:
         Ref: PrivateRouteTableTwo
+
   PrivateRouteToInternetOne:
     DependsOn:
     - PrivateRouteTableOne
@@ -322,6 +355,7 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId:
         Ref: NATGatewayOne
+
   PrivateRouteToInternetTwo:
     DependsOn:
     - PrivateRouteTableTwo
@@ -333,18 +367,22 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId:
         Ref: NATGatewayTwo
+
   PrivateRouteTableOne:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId:
         Ref: VPC
+
   PrivateRouteTableTwo:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId:
         Ref: VPC
+
   InternetGateway:
     Type: AWS::EC2::InternetGateway
+
   VPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
@@ -352,11 +390,13 @@ Resources:
         Ref: VPC
       InternetGatewayId:
         Ref: InternetGateway
+
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId:
         Ref: VPC
+
   PublicRoute:
     Type: AWS::EC2::Route
     Properties:
@@ -365,6 +405,7 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId:
         Ref: InternetGateway
+
   NATGatewayOne:
     DependsOn: InternetGateway
     Type: AWS::EC2::NatGateway
@@ -375,10 +416,12 @@ Resources:
         - AllocationId
       SubnetId:
         Ref: PublicSubnetOne
+
   ElasticIPOne:
     Type: AWS::EC2::EIP
     Properties:
       Domain: vpc
+
   NATGatewayTwo:
     DependsOn: InternetGateway
     Type: AWS::EC2::NatGateway
@@ -389,10 +432,12 @@ Resources:
         - AllocationId
       SubnetId:
         Ref: PublicSubnetTwo
+
   ElasticIPTwo:
     Type: AWS::EC2::EIP
     Properties:
       Domain: vpc
+
   DrupalElasticacheSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -410,6 +455,7 @@ Resources:
           Ref: PrivateSubnetTwoCidr
       VpcId:
         Ref: VPC
+
   DrupalElasticacheSubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
     Properties:
@@ -417,6 +463,7 @@ Resources:
       SubnetIds:
       - Ref: PrivateSubnetOne
       - Ref: PrivateSubnetTwo
+
   DrupalElasticacheCluster:
     Type: AWS::ElastiCache::CacheCluster
     Properties:
@@ -428,6 +475,7 @@ Resources:
       - Ref: DrupalElasticacheSecurityGroup
       CacheSubnetGroupName:
         Ref: DrupalElasticacheSubnetGroup
+
   Drupal7DBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
@@ -435,6 +483,7 @@ Resources:
       SubnetIds:
       - Ref: PrivateSubnetOne
       - Ref: PrivateSubnetTwo
+
   Drupal7DbSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -455,6 +504,7 @@ Resources:
       Tags:
       - Key: Name
         Value: Security Group for Drupal 7 RDS instances
+
   DrupalDb:
     Type: AWS::RDS::DBInstance
     Properties:
@@ -483,6 +533,7 @@ Resources:
       - Key: Name
         Value: Drupal 7 Database
     DeletionPolicy: Snapshot
+
   DrupalELBPublicAccess:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -498,6 +549,7 @@ Resources:
         CidrIp: 0.0.0.0/0
       VpcId:
         Ref: VPC
+
   DrupalWebServerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -520,6 +572,7 @@ Resources:
         Value: Drupal web server host security group
       - Key: Service
         Value: Drupal
+
   DrupalWebServerAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     DependsOn:
@@ -563,6 +616,7 @@ Resources:
         MaxBatchSize: '1'
         PauseTime: PT15M
         WaitOnResourceSignals: 'true'
+
   DrupalWebServerElasticLoadBalancer:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
@@ -593,6 +647,7 @@ Resources:
         Timeout: '5'
       SecurityGroups:
       - Ref: DrupalELBPublicAccess
+
   LaunchConfigurationForDrupalWebServer:
     Type: AWS::AutoScaling::LaunchConfiguration
     Metadata:
@@ -610,48 +665,22 @@ Resources:
         mount:
           commands:
             10_mkdir:
-              command:
-                Fn::Join:
-                - ''
-                - - mkdir -p /
-                  - Ref: MountPoint
+              command: !Sub |
+                mkdir -p /${MountPoint}
             20_mount:
-              command:
-                Fn::Join:
-                - ''
-                - - mount -t nfs4 $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).
-                  - Ref: SharedFileSystem
-                  - ".efs."
-                  - Ref: AWS::Region
-                  - ".amazonaws.com:/ /"
-                  - Ref: MountPoint
+              command: !Sub |
+                mount -t nfs4 $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).${SharedFileSystem}.efs.${AWS::Region}.amazonaws.com:/ /${MountPoint}
             30_mkdir_drupal:
-              command:
-                Fn::Join:
-                - ''
-                - - mkdir -p /
-                  - Ref: MountPoint
-                  - "/drupal-data"
+              command: !Sub |
+                mkdir -p /${MountPoint}/drupal-data
             31_mkdir_drupal:
-              command:
-                Fn::Join:
-                - ''
-                - - mkdir -p /
-                  - Ref: MountPoint
-                  - "/drupal-private"
+              command: !Sub |
+                mkdir -p /${MountPoint}/drupal-private"
             40_permissions:
-              command:
-                Fn::Join:
-                - ''
-                - - chown ec2-user:ec2-user /
-                  - Ref: MountPoint
-                  - "\n"
-                  - chown -R 33:33 /
-                  - Ref: MountPoint
-                  - "/drupal-data\n"
-                  - chown -R 33:33 /
-                  - Ref: MountPoint
-                  - "/drupal-private\n"
+              command: !Sub |
+                chown ec2-user:ec2-user /${MountPoint}
+                chown -R 33:33 /${MountPoint}/drupal-data
+                chown -R 33:33 /${MountPoint}/drupal-private
         install:
           packages:
             yum:
@@ -666,17 +695,10 @@ Resources:
                   - docker
           files:
             "/tmp/install-docker-compose.sh":
-              content:
-                Fn::Join:
-                - ''
-                - - "#!/bin/bash\n"
-                  - 'curl -L https://github.com/docker/compose/releases/download/1.7.1/docker-compose-`uname
-                    -s`-`uname -m` > /usr/local/bin/docker-compose
-
-'
-                  - 'chmod +x /usr/local/bin/docker-compose
-
-'
+              content: !Sub |
+                #!/bin/bash
+                curl -L https://github.com/docker/compose/releases/download/1.7.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+                chmod +x /usr/local/bin/docker-compose
               mode: '000755'
               owner: root
               group: root
@@ -687,101 +709,53 @@ Resources:
         run:
           files:
             "/tmp/docker-compose.yml":
-              content:
-                Fn::Join:
-                - ''
-                - - 'version: ''2''
+              content: !Sub |
+                version: '2'
+                services:
+                  drupal:
+                    image: ${DockerImage}
+                    restart: always
+                    ports:
+                      - "80:80"
+                    environment:
+                      DRUPAL_DB_NAME: ${DbName}
+                      DRUPAL_DB_USER: ${DbMasterUsername}
+                      DRUPAL_DB_PASS: ${DbMasterPassword}
+                      DRUPAL_DB_HOST: !GetAtt DrupalDb.Endpoint.Address
+                      DRUPAL_REDIS_HOST: !GetAtt DrupalElasticacheCluster.RedisEndpoint.Address
+                      DRUPAL_REDIS_POST: !GetAtt DrupalElasticacheCluster.RedisEndpoint.Port
+                    logging:
+                      driver: syslog
+                      options:
+                        syslog-address: ${SyslogDestination}
+                    volumes:
+                      - /${MountPoint}/drupal-data:/var/www/html/sites/default/files
+                      - /${MountPoint}/drupal-private:/data/privat
 
-'
-                  - 'services:
-
-'
-                  - "  drupal:\n"
-                  - "    image: "
-                  - Ref: DockerImage
-                  - "\n"
-                  - "    restart: always\n"
-                  - "    ports:\n"
-                  - '      - "80:80"
-
-'
-                  - "    environment:\n"
-                  - "      DRUPAL_DB_NAME: "
-                  - Ref: DbName
-                  - "\n"
-                  - "      DRUPAL_DB_USER: "
-                  - Ref: DbMasterUsername
-                  - "\n"
-                  - "      DRUPAL_DB_PASS: "
-                  - Ref: DbMasterPassword
-                  - "\n"
-                  - "      DRUPAL_DB_HOST: "
-                  - Fn::GetAtt:
-                    - DrupalDb
-                    - Endpoint.Address
-                  - "\n"
-                  - "      DRUPAL_REDIS_HOST: "
-                  - Fn::GetAtt:
-                    - DrupalElasticacheCluster
-                    - RedisEndpoint.Address
-                  - "\n"
-                  - "      DRUPAL_REDIS_POST: "
-                  - Fn::GetAtt:
-                    - DrupalElasticacheCluster
-                    - RedisEndpoint.Port
-                  - "\n"
-                  - "    logging:\n"
-                  - "      driver: syslog\n"
-                  - "      options:\n"
-                  - '        syslog-address: "'
-                  - Ref: SyslogDestination
-                  - "\"\n"
-                  - "    volumes:\n"
-                  - "      - /"
-                  - Ref: MountPoint
-                  - "/drupal-data:/var/www/html/sites/default/files\n"
-                  - "      - /"
-                  - Ref: MountPoint
-                  - "/drupal-private:/data/private\n"
               mode: '000644'
               owner: root
               group: root
+
             "/etc/cfn/cfn-hup.conf":
-              content:
-                Fn::Join:
-                - ''
-                - - "[main]\n"
-                  - stack=
-                  - Ref: AWS::StackId
-                  - "\n"
-                  - region=
-                  - Ref: AWS::Region
-                  - "\n"
+              content: !Sub |
+                [main]
+                stack= ${AWS::StackId}
+                region= ${AWS::Region}
               mode: '000400'
               owner: root
               group: root
+
             "/etc/cfn/hooks.d/cfn-auto-reloader.conf":
-              content:
-                Fn::Join:
-                - ''
-                - - "[cfn-auto-reloader-hook]\n"
-                  - 'triggers=post.update
-
-'
-                  - 'path=Resources.LaunchConfigurationForDrupalWebServer.Metadata.AWS::CloudFormation::Init
-
-'
-                  - 'action=/opt/aws/bin/cfn-init -v '
-                  - "         --stack "
-                  - Ref: AWS::StackName
-                  - "         --resource LaunchConfigurationForDrupalWebServer "
-                  - "         --configsets reload_drupal "
-                  - "         --region "
-                  - Ref: AWS::Region
-                  - "\n"
-                  - 'runas=root
-
-'
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.LaunchConfigurationForDrupalWebServer.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init -v \
+                  --stack ${AWS::StackName} \
+                  --resource LaunchConfigurationForDrupalWebServer \
+                  --configsets reload_drupal \
+                  --region ${AWS::Region}
+                runas=root
           services:
             sysvinit:
               cfn-hup:
