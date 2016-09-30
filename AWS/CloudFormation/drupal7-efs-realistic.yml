@@ -1,6 +1,4 @@
 ---
-description: Great, we can do this in YAML now.
----
 
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Custom VPC and Multi-AZ stack for Drupal 7 with MySQL DB, redis and EFS
@@ -171,13 +169,9 @@ Mappings:
 Outputs:
   WebsiteURL:
     Description: URL for newly created Drupal stack
-    Value:
-      Fn::Join:
-      - ''
-      - - http://
-        - Fn::GetAtt:
-          - DrupalWebServerElasticLoadBalancer
-          - DNSName
+    Value: !Sub
+      - "http://{ADDRESS}"
+      - ADDRESS: !GetAtt DrupalWebServerElasticLoadBalancer.DNSName
 
 Resources:
   MountTargetSecurityGroup:
