@@ -509,6 +509,7 @@ Resources:
       - !GetAtt PrivateSubnetTwo.AvailabilityZone
       DesiredCapacity: !Ref WebServerCapacity
       HealthCheckType: 'ELB'
+      HealthCheckGracePeriod: '300'
       MinSize: '0'
       MaxSize: '10'
       LaunchConfigurationName: !Ref LaunchConfigurationForDrupalWebServer
