@@ -4,10 +4,6 @@ Description: Custom VPC and Multi-AZ stack for Drupal 7 with MySQL DB, redis and
   file storage. This stack uses a realistic example Drupal site, hosted on Github
   and Docker hub. For more information see https://github.com/karelbemelmans/drupal7-on-aws/
 
-################################################################################
-# Parameters
-################################################################################
-
 Parameters:
   KeyPairName:
     Description: The key pair name to connect to the instances
@@ -153,12 +149,6 @@ Parameters:
     Description: The SSL certificate id (arn) for HTTPS on the ELB
     Type: String
 
-
-
-################################################################################
-# Mappings
-################################################################################
-
 Mappings:
   AmazonMachineImages:
     eu-west-1:
@@ -174,31 +164,18 @@ Mappings:
       '64': ami-d0f506b0
       Description: Amazon Linux AMI 2016.03.1 (HVM), SSD Volume Type, us-west-2
 
-
-
-################################################################################
-# Outputs
-################################################################################
-
 Outputs:
   WebsiteURL:
     Description: URL for newly created Drupal stack
     Value: !Sub
-      - "http://{ADDRESS}"
+      - "http://${ADDRESS}"
       - ADDRESS: !GetAtt DrupalWebServerElasticLoadBalancer.DNSName
-
-
-
-################################################################################
-# Here come the resources!
-################################################################################
 
 Resources:
   MountTargetSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      VpcId:
-        Ref: VPC
+      VpcId: !Ref VPC
       GroupDescription: Security group for Drupal mount target
       SecurityGroupIngress:
       - IpProtocol: tcp
@@ -216,30 +193,25 @@ Resources:
   MountTargetPrivateSubnetOne:
     Type: AWS::EFS::MountTarget
     Properties:
-      FileSystemId:
-        Ref: SharedFileSystem
-      SubnetId:
-        Ref: PrivateSubnetOne
+      FileSystemId: !Ref SharedFileSystem
+      SubnetId: !Ref PrivateSubnetOne
       SecurityGroups:
-      - Ref: MountTargetSecurityGroup
+      - !Ref MountTargetSecurityGroup
 
   MountTargetPrivateSubnetTwo:
     Type: AWS::EFS::MountTarget
     Properties:
-      FileSystemId:
-        Ref: SharedFileSystem
-      SubnetId:
-        Ref: PrivateSubnetTwo
+      FileSystemId: !Ref SharedFileSystem
+      SubnetId: !Ref PrivateSubnetTwo
       SecurityGroups:
-      - Ref: MountTargetSecurityGroup
+      - !Ref MountTargetSecurityGroup
 
   VPC:
     Type: AWS::EC2::VPC
     Properties:
       EnableDnsSupport: 'true'
       EnableDnsHostnames: 'true'
-      CidrBlock:
-        Ref: VpcCidrBlock
+      CidrBlock: !Ref VpcCidrBlock
       Tags:
       - Key: Name
         Value: Drupal 7 VPC
@@ -247,16 +219,13 @@ Resources:
   PublicSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId:
-        Ref: VPC
+      VpcId: !Ref VPC
       MapPublicIpOnLaunch: true
-      CidrBlock:
-        Ref: PublicSubnetOneCidr
+      CidrBlock: !Ref PublicSubnetOneCidr
       AvailabilityZone:
         Fn::Select:
         - '0'
-        - Fn::GetAZs:
-            Ref: AWS::Region
+        - !GetAZs "AWS::Region"
       Tags:
       - Key: Name
         Value: 'Public Subnet #1'
@@ -264,16 +233,13 @@ Resources:
   PublicSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId:
-        Ref: VPC
+      VpcId: !Ref VPC
       MapPublicIpOnLaunch: true
-      CidrBlock:
-        Ref: PublicSubnetTwoCidr
+      CidrBlock: !Ref PublicSubnetTwoCidr
       AvailabilityZone:
         Fn::Select:
         - '1'
-        - Fn::GetAZs:
-            Ref: AWS::Region
+        - !GetAZs "AWS::Region"
       Tags:
       - Key: Name
         Value: 'Public Subnet #2'
@@ -281,16 +247,13 @@ Resources:
   PrivateSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId:
-        Ref: VPC
+      VpcId: !Ref VPC
       MapPublicIpOnLaunch: false
-      CidrBlock:
-        Ref: PrivateSubnetOneCidr
+      CidrBlock: !Ref PrivateSubnetOneCidr
       AvailabilityZone:
         Fn::Select:
         - '0'
-        - Fn::GetAZs:
-            Ref: AWS::Region
+        - !GetAZs "AWS::Region"
       Tags:
       - Key: Name
         Value: 'Private Subnet #1'
@@ -298,16 +261,13 @@ Resources:
   PrivateSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId:
-        Ref: VPC
+      VpcId: !Ref VPC
       MapPublicIpOnLaunch: false
-      CidrBlock:
-        Ref: PrivateSubnetTwoCidr
+      CidrBlock: !Ref PrivateSubnetTwoCidr
       AvailabilityZone:
         Fn::Select:
         - '1'
-        - Fn::GetAZs:
-            Ref: AWS::Region
+        - !GetAZs "AWS::Region"
       Tags:
       - Key: Name
         Value: 'Private Subnet #2'
@@ -315,34 +275,26 @@ Resources:
   PublicSubnetOneRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId:
-        Ref: PublicSubnetOne
-      RouteTableId:
-        Ref: PublicRouteTable
+      SubnetId: !Ref PublicSubnetOne
+      RouteTableId: !Ref PublicRouteTable
 
   PublicSubnetTwoRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId:
-        Ref: PublicSubnetTwo
-      RouteTableId:
-        Ref: PublicRouteTable
+      SubnetId: !Ref PublicSubnetTwo
+      RouteTableId: !Ref PublicRouteTable
 
   PrivateSubnetOneRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId:
-        Ref: PrivateSubnetOne
-      RouteTableId:
-        Ref: PrivateRouteTableOne
+      SubnetId: !Ref PrivateSubnetOne
+      RouteTableId: !Ref PrivateRouteTableOne
 
   PrivateSubnetTwoRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId:
-        Ref: PrivateSubnetTwo
-      RouteTableId:
-        Ref: PrivateRouteTableTwo
+      SubnetId: !Ref PrivateSubnetTwo
+      RouteTableId: !Ref PrivateRouteTableTwo
 
   PrivateRouteToInternetOne:
     DependsOn:
@@ -350,11 +302,9 @@ Resources:
     - NATGatewayOne
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId:
-        Ref: PrivateRouteTableOne
+      RouteTableId: !Ref PrivateRouteTableOne
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId:
-        Ref: NATGatewayOne
+      NatGatewayId: !Ref NATGatewayOne
 
   PrivateRouteToInternetTwo:
     DependsOn:
@@ -362,23 +312,19 @@ Resources:
     - NATGatewayTwo
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId:
-        Ref: PrivateRouteTableTwo
+      RouteTableId: !Ref PrivateRouteTableTwo
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId:
-        Ref: NATGatewayTwo
+      NatGatewayId: !Ref NATGatewayTwo
 
   PrivateRouteTableOne:
     Type: AWS::EC2::RouteTable
     Properties:
-      VpcId:
-        Ref: VPC
+      VpcId: !Ref VPC
 
   PrivateRouteTableTwo:
     Type: AWS::EC2::RouteTable
     Properties:
-      VpcId:
-        Ref: VPC
+      VpcId: !Ref VPC
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
@@ -386,25 +332,20 @@ Resources:
   VPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
-      VpcId:
-        Ref: VPC
-      InternetGatewayId:
-        Ref: InternetGateway
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
 
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
-      VpcId:
-        Ref: VPC
+      VpcId: !Ref VPC
 
   PublicRoute:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId:
-        Ref: PublicRouteTable
+      RouteTableId: !Ref PublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
-      GatewayId:
-        Ref: InternetGateway
+      GatewayId: !Ref InternetGateway
 
   NATGatewayOne:
     DependsOn: InternetGateway
@@ -414,8 +355,7 @@ Resources:
         Fn::GetAtt:
         - ElasticIPOne
         - AllocationId
-      SubnetId:
-        Ref: PublicSubnetOne
+      SubnetId: !Ref PublicSubnetOne
 
   ElasticIPOne:
     Type: AWS::EC2::EIP
@@ -430,8 +370,7 @@ Resources:
         Fn::GetAtt:
         - ElasticIPTwo
         - AllocationId
-      SubnetId:
-        Ref: PublicSubnetTwo
+      SubnetId: !Ref PublicSubnetTwo
 
   ElasticIPTwo:
     Type: AWS::EC2::EIP
@@ -446,23 +385,20 @@ Resources:
       - IpProtocol: tcp
         FromPort: '6379'
         ToPort: '6379'
-        CidrIp:
-          Ref: PrivateSubnetOneCidr
+        CidrIp: !Ref PrivateSubnetOneCidr
       - IpProtocol: tcp
         FromPort: '6379'
         ToPort: '6379'
-        CidrIp:
-          Ref: PrivateSubnetTwoCidr
-      VpcId:
-        Ref: VPC
+        CidrIp: !Ref PrivateSubnetTwoCidr
+      VpcId: !Ref VPC
 
   DrupalElasticacheSubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
     Properties:
       Description: Cache Subnet Group
       SubnetIds:
-      - Ref: PrivateSubnetOne
-      - Ref: PrivateSubnetTwo
+      - !Ref PrivateSubnetOne
+      - !Ref PrivateSubnetTwo
 
   DrupalElasticacheCluster:
     Type: AWS::ElastiCache::CacheCluster
@@ -472,17 +408,16 @@ Resources:
       Engine: redis
       NumCacheNodes: '1'
       VpcSecurityGroupIds:
-      - Ref: DrupalElasticacheSecurityGroup
-      CacheSubnetGroupName:
-        Ref: DrupalElasticacheSubnetGroup
+      - !Ref DrupalElasticacheSecurityGroup
+      CacheSubnetGroupName: !Ref DrupalElasticacheSubnetGroup
 
   Drupal7DBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
       DBSubnetGroupDescription: Subnets available for the Drupal 7 DB Instance
       SubnetIds:
-      - Ref: PrivateSubnetOne
-      - Ref: PrivateSubnetTwo
+      - !Ref PrivateSubnetOne
+      - !Ref PrivateSubnetTwo
 
   Drupal7DbSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -492,15 +427,12 @@ Resources:
       - IpProtocol: TCP
         FromPort: '3306'
         ToPort: '3306'
-        CidrIp:
-          Ref: PrivateSubnetOneCidr
+        CidrIp: !Ref PrivateSubnetOneCidr
       - IpProtocol: TCP
         FromPort: '3306'
         ToPort: '3306'
-        CidrIp:
-          Ref: PrivateSubnetTwoCidr
-      VpcId:
-        Ref: VPC
+        CidrIp: !Ref PrivateSubnetTwoCidr
+      VpcId: !Ref VPC
       Tags:
       - Key: Name
         Value: Security Group for Drupal 7 RDS instances
@@ -508,27 +440,20 @@ Resources:
   DrupalDb:
     Type: AWS::RDS::DBInstance
     Properties:
-      AllocatedStorage:
-        Ref: DBAllocatedStorage
+      AllocatedStorage: !Ref DBAllocatedStorage
       VPCSecurityGroups:
-      - Ref: Drupal7DbSecurityGroup
-      DBInstanceClass:
-        Ref: DBClass
+      - !Ref Drupal7DbSecurityGroup
+      DBInstanceClass: !Ref DBClass
       Engine: MySQL
       StorageType: gp2
-      MultiAZ:
-        Ref: MultiAZDatabase
-      DBSubnetGroupName:
-        Ref: Drupal7DBSubnetGroup
+      MultiAZ: !Ref MultiAZDatabase
+      DBSubnetGroupName: !Ref Drupal7DBSubnetGroup
       PreferredBackupWindow: 02:00-03:30
       BackupRetentionPeriod: '7'
       PreferredMaintenanceWindow: sun:04:00-sun:06:00
-      DBName:
-        Ref: DbName
-      MasterUsername:
-        Ref: DbMasterUsername
-      MasterUserPassword:
-        Ref: DbMasterPassword
+      DBName: !Ref DbName
+      MasterUsername: !Ref DbMasterUsername
+      MasterUserPassword: !Ref DbMasterPassword
       Tags:
       - Key: Name
         Value: Drupal 7 Database
@@ -547,8 +472,7 @@ Resources:
         FromPort: '443'
         ToPort: '443'
         CidrIp: 0.0.0.0/0
-      VpcId:
-        Ref: VPC
+      VpcId: !Ref VPC
 
   DrupalWebServerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -558,15 +482,12 @@ Resources:
       - IpProtocol: tcp
         FromPort: '80'
         ToPort: '80'
-        CidrIp:
-          Ref: VpcCidrBlock
+        CidrIp: !Ref VpcCidrBlock
       - IpProtocol: tcp
         FromPort: '22'
         ToPort: '22'
-        CidrIp:
-          Ref: VpcCidrBlock
-      VpcId:
-        Ref: VPC
+        CidrIp: !Ref VpcCidrBlock
+      VpcId: !Ref VPC
       Tags:
       - Key: Name
         Value: Drupal web server host security group
@@ -587,17 +508,15 @@ Resources:
       - Fn::GetAtt:
         - PrivateSubnetTwo
         - AvailabilityZone
-      LaunchConfigurationName:
-        Ref: LaunchConfigurationForDrupalWebServer
+      LaunchConfigurationName: !Ref LaunchConfigurationForDrupalWebServer
       MinSize: '0'
       MaxSize: '10'
-      DesiredCapacity:
-        Ref: WebServerCapacity
+      DesiredCapacity: !Ref WebServerCapacity
       LoadBalancerNames:
-      - Ref: DrupalWebServerElasticLoadBalancer
+      - !Ref DrupalWebServerElasticLoadBalancer
       VPCZoneIdentifier:
-      - Ref: PrivateSubnetOne
-      - Ref: PrivateSubnetTwo
+      - !Ref PrivateSubnetOne
+      - !Ref PrivateSubnetTwo
       Tags:
       - Key: Name
         Value: Drupal Web Server
@@ -608,8 +527,7 @@ Resources:
     CreationPolicy:
       ResourceSignal:
         Timeout: PT5M
-        Count:
-          Ref: WebServerCapacity
+        Count: !Ref WebServerCapacity
     UpdatePolicy:
       AutoScalingRollingUpdate:
         MinInstancesInService: '1'
@@ -621,8 +539,8 @@ Resources:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
       Subnets:
-      - Ref: PublicSubnetOne
-      - Ref: PublicSubnetTwo
+      - !Ref PublicSubnetOne
+      - !Ref PublicSubnetTwo
       CrossZone: 'true'
       LBCookieStickinessPolicy:
       - PolicyName: CookieBasedPolicy
@@ -637,8 +555,7 @@ Resources:
         Protocol: HTTPS
         PolicyNames:
         - CookieBasedPolicy
-        SSLCertificateId:
-          Ref: SslCertificateId
+        SSLCertificateId: !Ref SslCertificateId
       HealthCheck:
         Target: HTTP:80/install.php
         HealthyThreshold: '2'
@@ -646,7 +563,7 @@ Resources:
         Interval: '10'
         Timeout: '5'
       SecurityGroups:
-      - Ref: DrupalELBPublicAccess
+      - !Ref DrupalELBPublicAccess
 
   LaunchConfigurationForDrupalWebServer:
     Type: AWS::AutoScaling::LaunchConfiguration
@@ -656,43 +573,42 @@ Resources:
       AWS::CloudFormation::Init:
         configSets:
           drupal_install:
-          - mount
-          - install
-          - run
+          - "mount"
+          - "install"
+          - "run"
           drupal_reload:
-          - install
-          - run
+          - "install"
+          - "run"
+
         mount:
           commands:
             10_mkdir:
               command: !Sub |
                 mkdir -p /${MountPoint}
+
             20_mount:
               command: !Sub |
                 mount -t nfs4 $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).${SharedFileSystem}.efs.${AWS::Region}.amazonaws.com:/ /${MountPoint}
+
             30_mkdir_drupal:
               command: !Sub |
                 mkdir -p /${MountPoint}/drupal-data
+
             31_mkdir_drupal:
               command: !Sub |
                 mkdir -p /${MountPoint}/drupal-private"
+
             40_permissions:
               command: !Sub |
                 chown ec2-user:ec2-user /${MountPoint}
                 chown -R 33:33 /${MountPoint}/drupal-data
                 chown -R 33:33 /${MountPoint}/drupal-private
+
         install:
           packages:
             yum:
               docker: []
-          services:
-            sysvinit:
-              docker:
-                enabled: 'true'
-                ensureRunning: 'true'
-                packages:
-                  yum:
-                  - docker
+
           files:
             "/tmp/install-docker-compose.sh":
               content: !Sub |
@@ -702,11 +618,22 @@ Resources:
               mode: '000755'
               owner: root
               group: root
+
           commands:
             10_install_docker_compose:
               command: "/tmp/install-docker-compose.sh"
               cwd: "/tmp"
+
+          services:
+            sysvinit:
+              docker:
+                enabled: 'true'
+                ensureRunning: 'true'
+                packages:
+                  yum:
+                  - docker
         run:
+
           files:
             "/tmp/docker-compose.yml":
               content: !Sub |
@@ -756,6 +683,7 @@ Resources:
                   --configsets reload_drupal \
                   --region ${AWS::Region}
                 runas=root
+
           services:
             sysvinit:
               cfn-hup:
@@ -764,23 +692,19 @@ Resources:
                 files:
                 - "/etc/cfn/cfn-hup.conf"
                 - "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+
           commands:
             10_compose_up:
               command: "/usr/local/bin/docker-compose up -d"
               cwd: "/tmp"
+
     Properties:
-      ImageId:
-        Fn::FindInMap:
-        - AmazonMachineImages
-        - Ref: AWS::Region
-        - '64'
+      ImageId: !FindInMap [ AmazonMachineImages, !Ref "AWS::Region", '64' ]
       InstanceMonitoring: false
-      InstanceType:
-        Ref: WebServerInstanceType
-      KeyName:
-        Ref: KeyPairName
+      InstanceType: !Ref WebServerInstanceType
+      KeyName: !Ref KeyPairName
       SecurityGroups:
-      - Ref: DrupalWebServerSecurityGroup
+      - !Ref DrupalWebServerSecurityGroup
       BlockDeviceMappings:
       - DeviceName: "/dev/xvda"
         Ebs:
@@ -788,24 +712,17 @@ Resources:
           DeleteOnTermination: 'true'
       UserData:
         Fn::Base64:
-          Fn::Join:
-          - ''
-          - - "#!/bin/bash -xe\n"
-            - 'yum update -y aws-cfn-bootstrap
+          !Sub |
+            "#!/bin/bash -xe
+            yum update -y aws-cfn-bootstrap
 
-'
-            - "/opt/aws/bin/cfn-init -v "
-            - "         --stack "
-            - Ref: AWS::StackName
-            - "         --resource LaunchConfigurationForDrupalWebServer "
-            - "         --configsets drupal_install "
-            - "         --region "
-            - Ref: AWS::Region
-            - "\n"
-            - "/opt/aws/bin/cfn-signal -e $? "
-            - "         --stack "
-            - Ref: AWS::StackName
-            - "         --resource DrupalWebServerAutoScalingGroup "
-            - "         --region "
-            - Ref: AWS::Region
-            - "\n"
+            /opt/aws/bin/cfn-init -v \
+              --stack ${AWS::StackName} \
+              --resource LaunchConfigurationForDrupalWebServer \
+              --configsets drupal_install \
+              --region ${AWS::Region}
+
+            /opt/aws/bin/cfn-signal -e $? \
+              --stack ${AWS::StackName} \
+              --resource DrupalWebServerAutoScalingGroup \
+              --region ${AWS::Region}
