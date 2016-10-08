@@ -66,6 +66,7 @@ Parameters:
     MaxLength: '16'
     AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
     ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+    NoEcho: true
 
   WebServerCapacity:
     Default: '2'
@@ -225,7 +226,7 @@ Resources:
       AvailabilityZone:
         Fn::Select:
         - '0'
-        - !GetAZs "AWS::Region"
+        - Fn::GetAZs: ''
       Tags:
       - Key: Name
         Value: 'Public Subnet #1'
@@ -239,7 +240,7 @@ Resources:
       AvailabilityZone:
         Fn::Select:
         - '1'
-        - !GetAZs "AWS::Region"
+        - Fn::GetAZs: ''
       Tags:
       - Key: Name
         Value: 'Public Subnet #2'
@@ -253,7 +254,7 @@ Resources:
       AvailabilityZone:
         Fn::Select:
         - '0'
-        - !GetAZs "AWS::Region"
+        - Fn::GetAZs: ''
       Tags:
       - Key: Name
         Value: 'Private Subnet #1'
@@ -267,7 +268,7 @@ Resources:
       AvailabilityZone:
         Fn::Select:
         - '1'
-        - !GetAZs "AWS::Region"
+        - Fn::GetAZs: ''
       Tags:
       - Key: Name
         Value: 'Private Subnet #2'
