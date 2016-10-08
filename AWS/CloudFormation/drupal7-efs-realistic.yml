@@ -501,14 +501,12 @@ Resources:
     - MountTargetPrivateSubnetOne
     - MountTargetPrivateSubnetTwo
     - InternetGateway
+    - DrupalDb
+    - DrupalElasticacheCluster
     Properties:
       AvailabilityZones:
-      - Fn::GetAtt:
-        - PrivateSubnetOne
-        - AvailabilityZone
-      - Fn::GetAtt:
-        - PrivateSubnetTwo
-        - AvailabilityZone
+      - !GetAtt PrivateSubnetOne.AvailabilityZone
+      - !GetAtt PrivateSubnetTwo.AvailabilityZone
       LaunchConfigurationName: !Ref LaunchConfigurationForDrupalWebServer
       MinSize: '0'
       MaxSize: '10'
@@ -531,9 +529,9 @@ Resources:
         Count: !Ref WebServerCapacity
     UpdatePolicy:
       AutoScalingRollingUpdate:
-        MinInstancesInService: '1'
+        MinInstancesInService: !Ref WebServerCapacity
         MaxBatchSize: '1'
-        PauseTime: PT15M
+        PauseTime: PT5M
         WaitOnResourceSignals: 'true'
 
   DrupalWebServerElasticLoadBalancer:
@@ -597,7 +595,7 @@ Resources:
 
             31_mkdir_drupal:
               command: !Sub |
-                mkdir -p /${MountPoint}/drupal-private"
+                mkdir -p /${MountPoint}/drupal-private
 
             40_permissions:
               command: !Sub |
@@ -649,9 +647,9 @@ Resources:
                       DRUPAL_DB_NAME: ${DbName}
                       DRUPAL_DB_USER: ${DbMasterUsername}
                       DRUPAL_DB_PASS: ${DbMasterPassword}
-                      DRUPAL_DB_HOST: !GetAtt DrupalDb.Endpoint.Address
-                      DRUPAL_REDIS_HOST: !GetAtt DrupalElasticacheCluster.RedisEndpoint.Address
-                      DRUPAL_REDIS_POST: !GetAtt DrupalElasticacheCluster.RedisEndpoint.Port
+                      DRUPAL_DB_HOST: ${DrupalDb.Endpoint.Address}
+                      DRUPAL_REDIS_HOST: ${DrupalElasticacheCluster.RedisEndpoint.Address}
+                      DRUPAL_REDIS_POST: ${DrupalElasticacheCluster.RedisEndpoint.Port}
                     logging:
                       driver: syslog
                       options:
@@ -714,7 +712,7 @@ Resources:
       UserData:
         Fn::Base64:
           !Sub |
-            "#!/bin/bash -xe
+            #!/bin/bash -xe
             yum update -y aws-cfn-bootstrap
 
             /opt/aws/bin/cfn-init -v \
