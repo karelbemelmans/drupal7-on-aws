@@ -507,10 +507,11 @@ Resources:
       AvailabilityZones:
       - !GetAtt PrivateSubnetOne.AvailabilityZone
       - !GetAtt PrivateSubnetTwo.AvailabilityZone
-      LaunchConfigurationName: !Ref LaunchConfigurationForDrupalWebServer
+      DesiredCapacity: !Ref WebServerCapacity
+      HealthCheckType: 'ELB'
       MinSize: '0'
       MaxSize: '10'
-      DesiredCapacity: !Ref WebServerCapacity
+      LaunchConfigurationName: !Ref LaunchConfigurationForDrupalWebServer
       LoadBalancerNames:
       - !Ref DrupalWebServerElasticLoadBalancer
       VPCZoneIdentifier:
