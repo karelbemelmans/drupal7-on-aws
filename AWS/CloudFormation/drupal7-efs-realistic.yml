@@ -610,20 +610,11 @@ Resources:
             yum:
               docker: []
 
-          files:
-            "/tmp/install-docker-compose.sh":
-              content: !Sub |
-                #!/bin/bash
-                curl -L https://github.com/docker/compose/releases/download/1.7.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
-                chmod +x /usr/local/bin/docker-compose
-              mode: '000755'
-              owner: root
-              group: root
-
           commands:
             10_install_docker_compose:
-              command: "/tmp/install-docker-compose.sh"
-              cwd: "/tmp"
+              command: !Sub |
+                curl -L https://github.com/docker/compose/releases/download/1.7.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+                chmod +x /usr/local/bin/docker-compose
 
           services:
             sysvinit:
@@ -634,7 +625,6 @@ Resources:
                   yum:
                   - docker
         run:
-
           files:
             "/tmp/docker-compose.yml":
               content: !Sub |
